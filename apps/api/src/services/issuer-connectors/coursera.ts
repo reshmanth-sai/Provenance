@@ -16,10 +16,12 @@
  *    - The destination hostname is a hardcoded module-level constant ('www.coursera.org').
  *    - The extracted identifier is an alphanumeric token strictly matching /^[A-Z0-9]{8,20}$/.
  *    - The token is interpolated into fixed, predefined path templates.
+ *    - Safe same-host redirects are permitted up to 2 hops, strictly re-asserting
+ *      exact equality to the constant host ('www.coursera.org') and HTTPS on every hop.
  *    - The network engine enforces 10 strict controls: fixed host assertion,
- *      HTTPS-only, manual redirect policy (no redirect following), 5s timeout,
- *      512KB body cap, request count cap, safe logging (no full body), and SHA-256
- *      hash storage of third-party names (never plaintext).
+ *      HTTPS-only, same-host redirect validation, 5s timeout, 512KB body cap,
+ *      request count cap, safe logging (no full body), and SHA-256 hash storage of
+ *      third-party names (never plaintext).
  * ============================================================================
  */
 
@@ -29,155 +31,109 @@ import { IssuerConnector } from "./types.js";
 export const COURSERA_HOST = "www.coursera.org";
 
 /**
- * Multi-strategy parser to extract certificate holder name from Coursera verification HTML.
- * If no strategy confidently identifies a recipient name, returns null.
- * A null return guarantees that the system produces 'issuer_lookup_unavailable'
- * rather than falsely accusing a candidate of a name mismatch due to upstream HTML changes.
+ * Structured Apollo State parser for Coursera verification pages.
+ * 
+ * Reads holder name from `window.__APOLLO_STATE__` -> `signatureTrackProfilesV1...`
+ * Distinguishes:
+ * 1. Valid accomplishment -> returns `{ parsedName: string, notFound: false }`
+ * 2. Resource explicitly null -> returns `{ parsedName: null, notFound: true }`
+ * 3. Unparseable, corrupted, or missing state -> returns `{ parsedName: null, notFound: false }`
  */
-export function parseCourseraHolderName(html: string): string | null {
-  if (!html || typeof html !== "string") return null;
-
-  // Clean HTML entities helper
-  const decodeEntities = (str: string): string => {
-    return str
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&nbsp;/g, " ")
-      .trim();
-  };
-
-  const sanitizeName = (raw: string | undefined | null): string | null => {
-    if (!raw) return null;
-    const cleaned = decodeEntities(raw).replace(/\s+/g, " ").trim();
-    // Exclude generic platform words, titles, and malformed strings
-    if (
-      cleaned.length < 2 ||
-      cleaned.length > 70 ||
-      /^coursera/i.test(cleaned) ||
-      /^online courses/i.test(cleaned) ||
-      /^join for free/i.test(cleaned) ||
-      /^accomplishment/i.test(cleaned) ||
-      /^specialization/i.test(cleaned) ||
-      /^certificate/i.test(cleaned)
-    ) {
-      return null;
-    }
-    return cleaned;
-  };
-
-  // Strategy 1: JSON-LD Structured Data (<script type="application/ld+json">)
-  const jsonLdMatches = html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
-  for (const match of jsonLdMatches) {
-    try {
-      const data = JSON.parse(match[1]);
-      const checkObj = (obj: any): string | null => {
-        if (!obj || typeof obj !== "object") return null;
-        if (obj.recipient && typeof obj.recipient === "object" && obj.recipient.name) {
-          return sanitizeName(obj.recipient.name);
-        }
-        if (obj.recipient && typeof obj.recipient === "string") {
-          return sanitizeName(obj.recipient);
-        }
-        if (obj.recipientName && typeof obj.recipientName === "string") {
-          return sanitizeName(obj.recipientName);
-        }
-        if (obj.name && obj["@type"] === "Person") {
-          return sanitizeName(obj.name);
-        }
-        return null;
-      };
-
-      const found = checkObj(data);
-      if (found) return found;
-      if (Array.isArray(data)) {
-        for (const item of data) {
-          const itemFound = checkObj(item);
-          if (itemFound) return itemFound;
-        }
-      }
-    } catch {
-      // Continue to next strategy
-    }
+export function parseCourseraResponse(html: string, code: string): { parsedName: string | null; notFound: boolean } {
+  if (!html || typeof html !== "string") {
+    return { parsedName: null, notFound: false };
   }
 
-  // Strategy 2: OpenGraph & Meta Tag Patterns
-  // Examples:
-  // <meta property="og:title" content="Coursera | Verification for Jane Doe"/>
-  // <meta name="description" content="...completed by John Smith..."/>
-  const metaMatches = html.matchAll(/<meta[^>]+(?:name|property)=["']([^"']+)["'][^>]+content=["']([^"']+)["'][^>]*>/gi);
-  for (const match of metaMatches) {
-    const prop = match[1].toLowerCase();
-    const content = match[2];
-
-    if (prop.includes("title") || prop.includes("description")) {
-      const patterns = [
-        /(?:completed|awarded to|certified to|accomplishment for|earned by|issued to)\s+([A-Z][a-zA-Z\s.'-]+?)(?:'s|\s+on|\s+for|\s+with|\.|\/|,|$)/i,
-        /([A-Z][a-zA-Z\s.'-]+?)(?:'s)?\s+account is verified/i,
-        /verify certificate for\s+([A-Z][a-zA-Z\s.'-]+?)(?:\.|\/|,|$)/i,
-        /verification for\s+([A-Z][a-zA-Z\s.'-]+?)(?:\s*\||\.|\/|,|$)/i,
-      ];
-      for (const pattern of patterns) {
-        const m = content.match(pattern);
-        if (m && m[1]) {
-          const cand = sanitizeName(m[1]);
-          if (cand) return cand;
-        }
-      }
+  try {
+    const prefix = "window.__APOLLO_STATE__ = ";
+    const startIdx = html.indexOf(prefix);
+    if (startIdx === -1) {
+      return { parsedName: null, notFound: false };
     }
-  }
 
-  // Strategy 3: Client State / Embedded State Objects (window.__APOLLO_STATE__, window.App)
-  const apolloStateMatch = html.match(/window\.__APOLLO_STATE__\s*=\s*(\{[\s\S]*?\});\s*(?:window|<)/);
-  if (apolloStateMatch) {
-    try {
-      const apolloData = JSON.parse(apolloStateMatch[1]);
-      for (const [key, val] of Object.entries(apolloData)) {
-        if (typeof val === "object" && val !== null) {
-          const v: any = val;
-          if (v.fullName && typeof v.fullName === "string") {
-            const cand = sanitizeName(v.fullName);
-            if (cand) return cand;
-          }
-          if (v.learnerName && typeof v.learnerName === "string") {
-            const cand = sanitizeName(v.learnerName);
-            if (cand) return cand;
-          }
-          if (v.recipientName && typeof v.recipientName === "string") {
-            const cand = sanitizeName(v.recipientName);
-            if (cand) return cand;
-          }
-          if (v.__typename === "User" && v.name && typeof v.name === "string") {
-            const cand = sanitizeName(v.name);
-            if (cand) return cand;
+    const jsonStart = startIdx + prefix.length;
+    const endSemicolon = html.indexOf(";\n", jsonStart);
+    const endScriptTag = html.indexOf(";</script>", jsonStart);
+    let endIdx = endSemicolon !== -1 ? endSemicolon : endScriptTag;
+
+    if (endIdx === -1) {
+      endIdx = html.indexOf("};", jsonStart);
+      if (endIdx !== -1) endIdx += 1;
+    }
+
+    if (endIdx === -1) {
+      return { parsedName: null, notFound: false };
+    }
+
+    const jsonStr = html.substring(jsonStart, endIdx);
+    const state = JSON.parse(jsonStr);
+
+    const cleanCode = code.toUpperCase().trim();
+    const rootQuery = state.ROOT_QUERY || {};
+
+    let hasResourceKey = false;
+    let allMatchingAreNull = true;
+
+    // Helper to extract name from signatureTrackProfiles array
+    const extractName = (profiles: any[]): string | null => {
+      if (!Array.isArray(profiles) || profiles.length === 0) return null;
+      const p = profiles[0];
+      if (!p || typeof p !== "object") return null;
+
+      const parts = [p.firstName, p.middleName, p.lastName]
+        .filter((x) => typeof x === "string")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const fullName = parts.join(" ").replace(/\s+/g, " ").trim();
+      return fullName.length > 0 ? fullName : null;
+    };
+
+    // 1. Inspect ROOT_QUERY resource entries
+    for (const [key, val] of Object.entries(rootQuery)) {
+      if (key.includes(cleanCode)) {
+        hasResourceKey = true;
+        if (val !== null) {
+          allMatchingAreNull = false;
+        }
+
+        if (val && typeof val === "object") {
+          for (const [vk, vv] of Object.entries(val as Record<string, any>)) {
+            if (vk.includes("signatureTrackProfiles") && Array.isArray(vv)) {
+              const name = extractName(vv);
+              if (name) return { parsedName: name, notFound: false };
+            }
+            if (typeof vv === "object" && vv !== null) {
+              for (const [subk, subv] of Object.entries(vv as Record<string, any>)) {
+                if (subk.includes("signatureTrackProfiles") && Array.isArray(subv)) {
+                  const name = extractName(subv);
+                  if (name) return { parsedName: name, notFound: false };
+                }
+              }
+            }
           }
         }
       }
-    } catch {
-      // Continue to next strategy
     }
+
+    // 2. Search entire state for AccomplishmentsSignatureTrackProfile objects
+    for (const [key, val] of Object.entries(state)) {
+      if (key.includes("AccomplishmentsSignatureTrackProfile") && val && typeof val === "object") {
+        const name = extractName([val]);
+        if (name) return { parsedName: name, notFound: false };
+      }
+    }
+
+    // 3. If resource key exists in ROOT_QUERY and was explicitly null -> code not found
+    if (hasResourceKey && allMatchingAreNull) {
+      return { parsedName: null, notFound: true };
+    }
+  } catch (err) {
+    // If JSON parse or traversal fails, safely degrade to unparseable
+    return { parsedName: null, notFound: false };
   }
 
-  // Strategy 4: DOM Headings & Key Selectors in HTML markup
-  const domPatterns = [
-    /<(?:h1|h2|h3|strong|span|div)[^>]*class=["'][^"']*(?:recipient|learner|student|holder|account-name)[^"']*["'][^>]*>([\s\S]*?)<\/(?:h1|h2|h3|strong|span|div)>/i,
-    /(?:This is to certify that|successfully completed by|awarded to)\s*<[^>]+>\s*([A-Z][a-zA-Z\s.'-]{2,60})\s*<\/[^>]+>/i,
-    /<h3[^>]*class=["'][^"']*banner-title[^"']*["'][^>]*>([\s\S]*?)<\/h3>/i,
-  ];
-
-  for (const pattern of domPatterns) {
-    const m = html.match(pattern);
-    if (m && m[1]) {
-      // Strip any nested HTML tags from capture
-      const stripped = m[1].replace(/<[^>]+>/g, " ");
-      const cand = sanitizeName(stripped);
-      if (cand) return cand;
-    }
-  }
-
-  return null;
+  return { parsedName: null, notFound: false };
 }
 
 export const courseraConnector: IssuerConnector = {
@@ -193,13 +149,13 @@ export const courseraConnector: IssuerConnector = {
   ],
   host: COURSERA_HOST,
   pathTemplates: [
-    "/verify/{code}",
-    "/verify/specialization/{code}",
-    "/verify/professional-cert/{code}",
-    "/account/accomplishments/verify/{code}",
     "/account/accomplishments/specialization/{code}",
+    "/account/accomplishments/verify/{code}",
     "/account/accomplishments/professional-cert/{code}",
+    "/verify/specialization/{code}",
+    "/verify/{code}",
+    "/verify/professional-cert/{code}",
   ],
   codePattern: /^[A-Z0-9]{8,20}$/,
-  parseHolderName: parseCourseraHolderName,
+  parseResponse: parseCourseraResponse,
 };

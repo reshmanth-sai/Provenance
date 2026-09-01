@@ -42,6 +42,8 @@ export function compareNames(parsedName: string, candidateName: string): boolean
 
 /**
  * Executes an anti-SSRF issuer lookup against a connector's public verification page.
+ * Implements strict same-host redirect validation (max 2 hops), exact host constant assertion,
+ * 5s timeout, 512KB body cap, and safe logging.
  */
 export async function executeIssuerLookup(params: {
   connector: IssuerConnector;
@@ -116,86 +118,120 @@ export async function executeIssuerLookup(params: {
   let lastHttpStatus: number | null = null;
   let rawNameHash: string | null = null;
   let matchedTemplate: string | undefined = undefined;
-  let all404 = true;
 
-  // Control 4: Sequential requests capped at 3 path templates, short-circuiting on first 200
+  // Control 4: Sequential requests capped at 3 path templates, short-circuiting on decisive outcome
   const templatesToTry = connector.pathTemplates.slice(0, 3);
 
   for (const template of templatesToTry) {
-    const startTime = Date.now();
-    try {
-      // Control 5: Host and scheme safety assertion
-      const encodedCode = encodeURIComponent(code);
-      const targetPath = template.replace("{code}", encodedCode);
-      const targetUrl = new URL(`https://${connector.host}${targetPath}`);
+    const encodedCode = encodeURIComponent(code);
+    const initialPath = template.replace("{code}", encodedCode);
+    let currentUrl = new URL(`https://${connector.host}${initialPath}`);
+    let redirectHops = 0;
+    const maxHops = 2;
 
-      if (targetUrl.host !== connector.host || targetUrl.protocol !== "https:") {
-        throw new Error(`SSRF assertion violation: destination '${targetUrl.host}' does not match connector host '${connector.host}'`);
+    while (redirectHops <= maxHops) {
+      // Control 5: Host and HTTPS scheme assertion on EVERY hop
+      if (currentUrl.host !== connector.host || currentUrl.protocol !== "https:") {
+        console.warn(`[ISSUER-LOOKUP] SSRF safety violation: destination '${currentUrl.host}' does not match connector host '${connector.host}' or protocol '${currentUrl.protocol}'`);
+        finalOutcome = "unavailable";
+        break;
       }
 
       // Control 6: 5-second timeout via AbortController
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const startTime = Date.now();
 
-      // Control 7: manual redirect policy (never follow redirects) & custom user agent
-      const response = await fetch(targetUrl.toString(), {
-        method: "GET",
-        headers: {
-          "User-Agent": "Provenance-Credential-Verifier/1.0 (+https://provenance.org)",
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        },
-        redirect: "manual",
-        signal: controller.signal,
-      });
+      let response: Response;
+      try {
+        // Control 7: manual redirect policy (re-asserting host check on each hop)
+        response = await fetch(currentUrl.toString(), {
+          method: "GET",
+          headers: {
+            "User-Agent": "Provenance-Credential-Verifier/1.0 (+https://provenance.org)",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          },
+          redirect: "manual",
+          signal: controller.signal,
+        });
+      } catch (reqErr: any) {
+        clearTimeout(timeoutId);
+        const durationMs = Date.now() - startTime;
+        console.warn(`[ISSUER-LOOKUP] Request error for ${currentUrl.pathname}: ${reqErr?.message || reqErr} (${durationMs}ms)`);
+        break;
+      }
 
       clearTimeout(timeoutId);
       const durationMs = Date.now() - startTime;
       lastHttpStatus = response.status;
 
-      // Control 8: Safe request logging (no response body logging)
-      console.log(`[ISSUER-LOOKUP] ${new Date().toISOString()} | Host: ${connector.host} | Path: ${targetPath} | Status: ${response.status} | Duration: ${durationMs}ms`);
+      // Control 8: Safe request logging (never log response bodies)
+      console.log(`[ISSUER-LOOKUP] ${new Date().toISOString()} | Host: ${connector.host} | Path: ${currentUrl.pathname} | Status: ${response.status} | Duration: ${durationMs}ms | Hop: ${redirectHops + 1}`);
 
-      if (response.status !== 404) {
-        all404 = false;
-      }
-
-      // If redirect (3xx), do NOT follow — treat as unavailable for this template
+      // Handle Redirect (3xx) — Follow ONLY if same-host and under hop limit
       if (response.status >= 300 && response.status < 400) {
+        const locationHeader = response.headers.get("location");
+        if (!locationHeader) {
+          console.warn(`[ISSUER-LOOKUP] Redirect ${response.status} missing Location header`);
+          break;
+        }
+
+        const nextUrl = new URL(locationHeader, currentUrl);
+        console.log(`[ISSUER-LOOKUP] Evaluating redirect destination: ${nextUrl.toString()}`);
+
+        // Re-assert exact host equality and https
+        if (nextUrl.host !== connector.host || nextUrl.protocol !== "https:") {
+          console.warn(`[ISSUER-LOOKUP] Aborting redirect to foreign destination: ${nextUrl.toString()}`);
+          finalOutcome = "unavailable";
+          break;
+        }
+
+        currentUrl = nextUrl;
+        redirectHops++;
+        if (redirectHops > maxHops) {
+          console.warn(`[ISSUER-LOOKUP] Exceeded maximum redirect hop limit (${maxHops})`);
+          break;
+        }
         continue;
       }
 
+      if (response.status === 404) {
+        finalOutcome = "code_not_found";
+        matchedTemplate = template;
+        break;
+      }
+
       if (response.status === 200) {
-        // Control 9: Response body capped at 512KB
+        // Control 9: Response body reading capped at 512KB
         const arrayBuf = await response.arrayBuffer();
         const cappedBuf = Buffer.from(arrayBuf).subarray(0, 512 * 1024);
         const html = cappedBuf.toString("utf8");
 
-        const parsedName = connector.parseHolderName(html);
-        if (parsedName) {
-          // Control 10: SHA-256 hash storage of parsed name (never store plaintext name)
-          rawNameHash = crypto.createHash("sha256").update(parsedName.toLowerCase().trim()).digest("hex");
-          const nameMatches = compareNames(parsedName, candidateName);
+        const parseRes = connector.parseResponse(html, code);
 
-          if (nameMatches) {
-            finalOutcome = "name_match";
-          } else {
-            finalOutcome = "name_mismatch";
-          }
+        if (parseRes.notFound) {
+          finalOutcome = "code_not_found";
           matchedTemplate = template;
-          break; // Short-circuit on successful parse
+          break;
+        } else if (parseRes.parsedName) {
+          // Control 10: SHA-256 hash storage of parsed name (never store plaintext name)
+          rawNameHash = crypto.createHash("sha256").update(parseRes.parsedName.toLowerCase().trim()).digest("hex");
+          const nameMatches = compareNames(parseRes.parsedName, candidateName);
+
+          finalOutcome = nameMatches ? "name_match" : "name_mismatch";
+          matchedTemplate = template;
+          break;
         } else {
           // Failure to parse a name MUST degrade to unavailable, NEVER to name_mismatch
           finalOutcome = "unavailable";
         }
       }
-    } catch (reqErr: any) {
-      const durationMs = Date.now() - startTime;
-      console.warn(`[ISSUER-LOOKUP] Error for ${template}: ${reqErr?.message || reqErr} (${durationMs}ms)`);
+      break;
     }
-  }
 
-  if (finalOutcome === "unavailable" && all404 && lastHttpStatus === 404) {
-    finalOutcome = "code_not_found";
+    if (finalOutcome === "name_match" || finalOutcome === "name_mismatch" || finalOutcome === "code_not_found") {
+      break;
+    }
   }
 
   // Persist IssuerLookup record if documentId is provided

@@ -118,7 +118,7 @@ Provenance includes an active public verification connector for institutions tha
 ### 3. Concrete Safety & Defense-in-Depth Controls
 1. **Fixed Host Assertion:** Before dispatch, the constructed URL is parsed and asserted to match `targetUrl.host === connector.host` and `targetUrl.protocol === "https:"`. Any discrepancy throws a fatal safety violation.
 2. **Pre-Request Regex Assertion:** Verification codes are re-validated immediately before request generation; strings containing slashes, dots, query parameters, or invalid characters are rejected with zero network requests.
-3. **Manual Redirect Policy:** HTTP client requests use `redirect: "manual"`. The connector never follows 3xx redirects to external locations.
+3. **Same-Host Redirect Policy:** Outbound requests allow safe internal redirects up to 2 hops, strictly re-asserting exact equality to the constant registry host (`targetUrl.host === connector.host`) and HTTPS on every hop. Any redirection to an external host or non-HTTPS scheme immediately aborts the lookup.
 4. **Bounded Latency & Timeouts:** Outbound requests are governed by a 5-second `AbortController` timeout.
 5. **Response Body Cap:** Response payload reading is hard-capped at 512KB to eliminate memory exhaustion vectors.
 6. **Request Capping:** At most 3 sequential path templates are queried per lookup, short-circuiting on the first 200 response.

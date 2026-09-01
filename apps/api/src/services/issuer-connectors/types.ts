@@ -7,7 +7,7 @@ export interface IssuerConnector {
   host: string;
   pathTemplates: string[];
   codePattern: RegExp;
-  parseHolderName(html: string): string | null;
+  parseResponse(html: string, code: string): { parsedName: string | null; notFound: boolean };
 }
 
 export type ConnectorLookupOutcome =

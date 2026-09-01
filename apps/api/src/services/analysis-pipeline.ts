@@ -30,6 +30,18 @@ const KNOWN_EDITING_TOOLS = [
   "pixelmator",
 ];
 
+export function foldOcrCharacters(str: string): string {
+  return str
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .replace(/[OQ]/g, "0")
+    .replace(/[IL]/g, "1")
+    .replace(/[S]/g, "5")
+    .replace(/[B]/g, "8")
+    .replace(/[Z]/g, "2")
+    .replace(/[G]/g, "6");
+}
+
 export interface SignalItem {
   signalType: string;
   signalValue: {
@@ -540,29 +552,39 @@ export async function runDocumentAnalysisPipeline(params: PipelineParams): Promi
       }
     }
 
-    // 3. Certificate Number Cross-Check (Substring + Levenshtein sliding window)
+    // 3. Certificate Number Cross-Check (OCR character folding + 0.75 Levenshtein sliding window)
     if (certificateNumber && certificateNumber.trim()) {
       const normCert = certificateNumber.toUpperCase().replace(/[^A-Z0-9]/g, "");
       const normText = extractedText.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const foldedCert = foldOcrCharacters(certificateNumber);
+      const foldedText = foldOcrCharacters(extractedText);
 
       if (normCert.length > 0 && normText.length > 0) {
         let certFound = false;
 
-        if (normText.includes(normCert)) {
+        // 1. Direct normalized match or folded match
+        if (normText.includes(normCert) || foldedText.includes(foldedCert)) {
           certFound = true;
         } else if (normText.length >= normCert.length) {
+          // 2. Sliding window on normalized and folded representations (threshold 0.75)
           const certLen = normCert.length;
           let bestSim = 0;
 
           for (let i = 0; i <= normText.length - certLen; i++) {
-            const windowStr = normText.substring(i, i + certLen);
-            const dist = distance(normCert, windowStr);
-            const sim = 1 - dist / certLen;
+            const windowNorm = normText.substring(i, i + certLen);
+            const distNorm = distance(normCert, windowNorm);
+            const simNorm = 1 - distNorm / certLen;
+
+            const windowFolded = foldedText.substring(i, i + certLen);
+            const distFolded = distance(foldedCert, windowFolded);
+            const simFolded = 1 - distFolded / certLen;
+
+            const sim = Math.max(simNorm, simFolded);
             if (sim > bestSim) bestSim = sim;
-            if (bestSim >= 0.85) break;
+            if (bestSim >= 0.75) break;
           }
 
-          if (bestSim >= 0.85) {
+          if (bestSim >= 0.75) {
             certFound = true;
           }
         }

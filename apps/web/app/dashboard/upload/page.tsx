@@ -409,7 +409,7 @@ export default function CandidateUploadPage() {
             <div className="space-y-0.5 text-center sm:text-left">
               <h4 className="text-sm font-bold text-primary">Request Formal Institutional Attestation</h4>
               <p className="text-xs text-gray-500">
-                Send this verified signal package to {claimedIssuerName} to record an immutable entry on their hash chain.
+                Request institutional attestation for this credential. If {claimedIssuerName.trim() || "the named institution"} is registered on Provenance, they will review your submission and record an immutable entry on their hash chain. For unregistered institutions, an invitation is sent to join the platform.
               </p>
             </div>
 
