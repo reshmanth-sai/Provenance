@@ -343,52 +343,56 @@ export default function CandidateUploadPage() {
             </div>
 
             <div className="space-y-4">
-              {signals.map((sig) => {
-                const isWarning = sig.severity === "review_recommended";
-                const isInconclusive = sig.severity === "inconclusive";
+              {signals.length === 0 ? (
+                <p className="text-xs text-gray-400 italic">No automated anomaly signals generated for this document.</p>
+              ) : (
+                signals.map((sig) => {
+                  const isWarning = sig.severity === "review_recommended";
+                  const isInconclusive = sig.severity === "inconclusive";
 
-                return (
-                  <div
-                    key={sig.id}
-                    className={`p-4 rounded-xl border space-y-2 ${
-                      isWarning
-                        ? "bg-amber-50/50 border-amber-200"
-                        : isInconclusive
-                        ? "bg-blue-50/50 border-blue-200"
-                        : "bg-surface border-gray-200"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold font-mono uppercase text-gray-700">
-                        {sig.signalType.replace(/_/g, " ")}
-                      </span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                  return (
+                    <div
+                      key={sig.id}
+                      className={`p-4 rounded-xl border space-y-2 ${
                         isWarning
-                          ? "bg-amber-100 text-amber-800"
+                          ? "bg-amber-50/50 border-amber-200"
                           : isInconclusive
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-emerald-100 text-emerald-800"
-                      }`}>
-                        {sig.severity.replace(/_/g, " ")}
-                      </span>
-                    </div>
-
-                    {/* Fact */}
-                    <div className="text-xs space-y-0.5">
-                      <span className="font-semibold text-gray-900">Extracted Fact: </span>
-                      <span className="text-gray-700">{sig.signalValue.fact || JSON.stringify(sig.signalValue)}</span>
-                    </div>
-
-                    {/* Disclaimer */}
-                    {sig.signalValue.disclaimer && (
-                      <div className="text-[11px] text-gray-500 italic flex items-start gap-1 pt-1 border-t border-gray-100">
-                        <Info className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
-                        <span>{sig.signalValue.disclaimer}</span>
+                          ? "bg-blue-50/50 border-blue-200"
+                          : "bg-surface border-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold font-mono uppercase text-gray-700">
+                          {sig.signalType.replace(/_/g, " ")}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                          isWarning
+                            ? "bg-amber-100 text-amber-800"
+                            : isInconclusive
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-emerald-100 text-emerald-800"
+                        }`}>
+                          {sig.severity.replace(/_/g, " ")}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+
+                      {/* Fact */}
+                      <div className="text-xs space-y-0.5">
+                        <span className="font-semibold text-gray-900">Extracted Fact: </span>
+                        <span className="text-gray-700">{sig.signalValue.fact || JSON.stringify(sig.signalValue)}</span>
+                      </div>
+
+                      {/* Disclaimer */}
+                      {sig.signalValue.disclaimer && (
+                        <div className="text-[11px] text-gray-500 italic flex items-start gap-1 pt-1 border-t border-gray-100">
+                          <Info className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
+                          <span>{sig.signalValue.disclaimer}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 

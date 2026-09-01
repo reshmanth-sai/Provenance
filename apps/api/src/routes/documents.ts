@@ -107,6 +107,8 @@ router.post(
         file: validatedFile,
         fileBuffer: req.file.buffer,
         candidateName: profile.name,
+        candidateId,
+        documentId: document.id,
         claimedIssuerName: claimedIssuerName.trim(),
         credentialType: credentialType.trim(),
         credentialTitle: credentialTitle.trim(),

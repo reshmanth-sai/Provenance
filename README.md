@@ -8,7 +8,10 @@ Provenance is a tamper-evident credential-verification platform featuring candid
 
 - **Node.js**: `v20.x` or higher
 - **npm**: `v10.x` or higher (configured for npm workspaces)
-- **Docker** & **Docker Compose**: For running the local PostgreSQL database
+- **Docker** & **Docker Compose**: For running the local PostgreSQL database (or PostgreSQL 16)
+- **System Binaries**:
+  - `tesseract` (for OCR text extraction): `brew install tesseract`
+  - `poppler` (for PDF rasterization via `pdftoppm`): `brew install poppler`
 
 ---
 

@@ -54,8 +54,16 @@ app.get("/health", async (_req: Request, res: Response) => {
   }
 });
 
+import { checkRasterizerAvailability } from "./services/pdf-rasterizer.js";
+
 app.listen(port, () => {
   console.log(`API server running on port ${port}`);
+  const rast = checkRasterizerAvailability();
+  if (!rast.available) {
+    console.warn("[WARN] No PDF rasterizer found (neither 'pdftoppm' nor 'sips' is in PATH). PDF visual analysis and OCR fallback will fail.");
+  } else {
+    console.log(`[INFO] PDF rasterization engine active: ${rast.engine}`);
+  }
 });
 
 export default app;

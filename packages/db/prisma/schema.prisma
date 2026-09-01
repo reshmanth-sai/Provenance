@@ -76,6 +76,8 @@ model Document {
   uploadedAt           DateTime           @default(now())
   analyses             DocumentAnalysis[]
   credentials          Credential[]
+
+  @@index([rawFileHash])
 }
 
 model DocumentAnalysis {

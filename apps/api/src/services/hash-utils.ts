@@ -27,33 +27,22 @@ export function computeCanonicalContentHash(fields: CredentialStructuredFields):
   return crypto.createHash("sha256").update(serialized).digest("hex");
 }
 
-import { execSync } from "child_process";
-import fs from "fs";
-import path from "path";
-import os from "os";
+import { rasterizePdfFirstPage } from "./pdf-rasterizer.js";
 
 /**
  * Computes a 64-bit difference hash (dHash) from an image or PDF buffer using Sharp.
- * For PDFs, rasterizes the first page using sips or converts to a raster format.
+ * For PDFs, rasterizes the first page using the shared rasterizer (pdftoppm / sips).
+ * Returns null if calculation fails or if the hash is degenerate (all zeros or all f).
  */
 export async function computePerceptualHash(buffer: Buffer, mimeType: string): Promise<string | null> {
   let imgBuffer = buffer;
 
   if (mimeType === "application/pdf") {
-    const tmpPdf = path.join(os.tmpdir(), `phash_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.pdf`);
-    const tmpPng = path.join(os.tmpdir(), `phash_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.png`);
     try {
-      fs.writeFileSync(tmpPdf, buffer);
-      // Use macOS native sips to rasterize PDF page 1 to PNG
-      execSync(`sips -s format png "${tmpPdf}" --out "${tmpPng}" 2>/dev/null`);
-      if (fs.existsSync(tmpPng)) {
-        imgBuffer = fs.readFileSync(tmpPng);
-      }
+      imgBuffer = await rasterizePdfFirstPage(buffer);
     } catch (_pdfRasterizeErr) {
-      // Fallback: if sips is unavailable, imgBuffer remains raw buffer
-    } finally {
-      if (fs.existsSync(tmpPdf)) fs.unlinkSync(tmpPdf);
-      if (fs.existsSync(tmpPng)) fs.unlinkSync(tmpPng);
+      // If rasterization fails, perceptual hash cannot be computed
+      return null;
     }
   }
 
@@ -80,6 +69,11 @@ export async function computePerceptualHash(buffer: Buffer, mimeType: string): P
     for (let i = 0; i < hash.length; i += 4) {
       const nibble = hash.substring(i, i + 4);
       hex += parseInt(nibble, 2).toString(16);
+    }
+
+    // Reject degenerate perceptual hashes that convey no information
+    if (hex === "0000000000000000" || hex === "ffffffffffffffff") {
+      return null;
     }
 
     return hex;
