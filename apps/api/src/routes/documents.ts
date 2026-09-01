@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import multer from "multer";
+import { rateLimit } from "express-rate-limit";
 import { prisma } from "@provenance/db";
 import { authenticateToken, requireRole } from "../middleware/auth.js";
 import { validateAndStoreFile } from "../services/file-storage.js";
@@ -11,12 +12,22 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 });
 
+// Dedicated rate limiter for expensive document analysis (20 uploads per 15 min per IP)
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: "Too many document uploads from this IP, please try again after 15 minutes." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Protect all document routes
 router.use(authenticateToken, requireRole("candidate"));
 
 // POST /documents/self-upload
 router.post(
   "/self-upload",
+  uploadLimiter,
   upload.single("file"),
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -97,6 +108,7 @@ router.post(
           status: "unverified",
           credentialType: credentialType.trim(),
           credentialTitle: credentialTitle.trim(),
+          claimedIssuerName: claimedIssuerName.trim(),
           issueDate: parsedIssueDate,
           certificateNumber: certificateNumber ? certificateNumber.trim() : null,
         },
@@ -286,9 +298,14 @@ router.post("/:id/request-verification", async (req: Request, res: Response): Pr
 
     // Case 2: Issuer is NOT registered on platform
     // Create an InstitutionInvite and CRITICALLY LEAVE Credential.status as 'unverified'
-    const institutionName =
-      req.body.claimedIssuerName ||
-      (document.canonicalContentHash ? "Claimed Issuing Institution" : "Unregistered Issuer");
+    const institutionName = credential.claimedIssuerName?.trim();
+
+    if (!institutionName) {
+      res.status(400).json({
+        error: "Cannot request verification: no claimed institution name recorded on this credential",
+      });
+      return;
+    }
 
     const invite = await prisma.institutionInvite.create({
       data: {

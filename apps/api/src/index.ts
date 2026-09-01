@@ -16,9 +16,21 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 4000;
 
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked: Origin ${origin} not permitted by allowlist`));
+    },
     credentials: true,
   })
 );
@@ -47,9 +59,10 @@ app.get("/health", async (_req: Request, res: Response) => {
     await prisma.$queryRaw`SELECT 1`;
     res.status(200).json({ status: "ok", db: "connected" });
   } catch (error) {
+    console.error("Health check database error:", error);
     res.status(500).json({
       status: "error",
-      message: error instanceof Error ? error.message : "Database connection failure",
+      message: "Service unavailable",
     });
   }
 });

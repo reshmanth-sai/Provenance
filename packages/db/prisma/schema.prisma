@@ -102,6 +102,7 @@ model Credential {
   status               String                @default("unverified") // unverified | pending | verified | rejected | revoked
   credentialType       String
   credentialTitle      String
+  claimedIssuerName    String?
   issueDate            DateTime?
   certificateNumber    String?
   createdAt            DateTime              @default(now())

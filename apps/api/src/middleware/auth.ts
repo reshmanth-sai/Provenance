@@ -23,9 +23,58 @@ declare global {
   }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || "placeholder_jwt_secret_phase0";
+export function getJwtSecrets(): { secret: string; refreshSecret: string } {
+  const secret = process.env.JWT_SECRET;
+  const refreshSecret = process.env.JWT_REFRESH_SECRET;
 
+  if (!secret || secret.length < 32) {
+    throw new Error("Fatal: JWT_SECRET environment variable is unset or shorter than 32 characters. Refusing to boot.");
+  }
+  if (!refreshSecret || refreshSecret.length < 32) {
+    throw new Error("Fatal: JWT_REFRESH_SECRET environment variable is unset or shorter than 32 characters. Refusing to boot.");
+  }
+
+  return { secret, refreshSecret };
+}
+
+export const { secret: JWT_SECRET, refreshSecret: JWT_REFRESH_SECRET } = getJwtSecrets();
+
+/**
+ * Global authentication middleware: strictly requires Authorization: Bearer <token> header.
+ * Query string token parameter is NOT permitted on standard API endpoints.
+ */
 export function authenticateToken(req: Request, res: Response, next: NextFunction): void {
+  let token: string | undefined;
+
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+
+  if (!token) {
+    res.status(401).json({ error: "Authentication token required" });
+    return;
+  }
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as JwtTokenPayload;
+    req.user = {
+      id: payload.userId,
+      email: payload.email,
+      role: payload.role,
+    };
+    next();
+  } catch (_error) {
+    res.status(401).json({ error: "Invalid or expired access token" });
+    return;
+  }
+}
+
+/**
+ * Dedicated authentication middleware scoped exclusively to document streaming routes
+ * (e.g. iframe embedded document views) where headers cannot be attached by browser <iframe> tags.
+ */
+export function authenticateStreamToken(req: Request, res: Response, next: NextFunction): void {
   let token: string | undefined;
 
   const authHeader = req.headers.authorization;

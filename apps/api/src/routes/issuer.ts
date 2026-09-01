@@ -1,7 +1,12 @@
 import fs from "fs";
 import { Router, Request, Response } from "express";
 import { prisma, hashPassword } from "@provenance/db";
-import { authenticateToken, requireRole, requireApprovedIssuer } from "../middleware/auth.js";
+import {
+  authenticateToken,
+  authenticateStreamToken,
+  requireRole,
+  requireApprovedIssuer,
+} from "../middleware/auth.js";
 import { appendChainEvent, verifyChain } from "../services/hash-chain.js";
 import { getDocumentFilePath } from "../services/file-storage.js";
 
@@ -74,7 +79,7 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
         data: {
           issuerId: issuer.id,
           userId: user.id,
-          role: "staff",
+          role: "admin",
         },
       });
 
@@ -82,10 +87,13 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
     });
 
     res.status(201).json({
-      message: "Institution registered successfully. Awaiting platform administrator approval.",
-      issuerId: result.issuer.id,
-      userId: result.user.id,
-      status: result.issuer.status,
+      message: "Institution registration submitted and is pending platform administrator approval",
+      issuer: {
+        id: result.issuer.id,
+        name: result.issuer.name,
+        domain: result.issuer.domain,
+        status: result.issuer.status,
+      },
     });
   } catch (error) {
     console.error("Error registering issuer:", error);
@@ -93,7 +101,64 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// All following routes require authenticated issuer_staff with approved institution status
+/**
+ * GET /issuer/verification-requests/:id/document
+ * Streams the candidate's uploaded file with the correct Content-Type for inline browser rendering.
+ * Gated by authenticateStreamToken to allow iframe query tokens while restricting all other endpoints to Bearer headers.
+ * Strictly gated: the verification request must belong to the caller's own issuer.
+ */
+router.get(
+  "/verification-requests/:id/document",
+  authenticateStreamToken,
+  requireRole("issuer_staff"),
+  requireApprovedIssuer,
+  async (req: Request, res: Response): Promise<void> => {
+    const issuerId = req.issuer!.id;
+    const { id } = req.params;
+
+    try {
+      const request = await prisma.verificationRequest.findFirst({
+        where: { id, issuerId },
+        include: {
+          credential: {
+            include: {
+              document: true,
+            },
+          },
+        },
+      });
+
+      if (!request || request.issuerId !== issuerId) {
+        res.status(404).json({ error: "Verification request not found for this institution" });
+        return;
+      }
+
+      const doc = request.credential?.document;
+      if (!doc) {
+        res.status(404).json({ error: "No document attached to this verification request" });
+        return;
+      }
+
+      const filePath = getDocumentFilePath(doc.storageKey);
+
+      if (!fs.existsSync(filePath)) {
+        res.status(404).json({ error: "Document file not found on storage disk" });
+        return;
+      }
+
+      res.setHeader("Content-Type", doc.originalMimeType || "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="${doc.storageKey}"`);
+
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (error) {
+      console.error("Error streaming verification request document:", error);
+      res.status(500).json({ error: "Failed to stream document" });
+    }
+  }
+);
+
+// All following routes strictly require standard Authorization: Bearer <token> header
 router.use(authenticateToken, requireRole("issuer_staff"), requireApprovedIssuer);
 
 /**
@@ -171,56 +236,6 @@ router.get("/verification-requests/:id", async (req: Request, res: Response): Pr
   } catch (error) {
     console.error("Error fetching verification request detail:", error);
     res.status(500).json({ error: "Failed to retrieve verification request" });
-  }
-});
-
-/**
- * GET /issuer/verification-requests/:id/document
- * Streams the candidate's uploaded file with the correct Content-Type for inline browser rendering.
- * Strictly gated: the verification request must belong to the caller's own issuer.
- */
-router.get("/verification-requests/:id/document", async (req: Request, res: Response): Promise<void> => {
-  const issuerId = req.issuer!.id;
-  const { id } = req.params;
-
-  try {
-    const request = await prisma.verificationRequest.findFirst({
-      where: { id, issuerId },
-      include: {
-        credential: {
-          include: {
-            document: true,
-          },
-        },
-      },
-    });
-
-    if (!request || request.issuerId !== issuerId) {
-      res.status(404).json({ error: "Verification request not found for this institution" });
-      return;
-    }
-
-    const doc = request.credential?.document;
-    if (!doc) {
-      res.status(404).json({ error: "No document attached to this verification request" });
-      return;
-    }
-
-    const filePath = getDocumentFilePath(doc.storageKey);
-
-    if (!fs.existsSync(filePath)) {
-      res.status(404).json({ error: "Document file not found on storage disk" });
-      return;
-    }
-
-    res.setHeader("Content-Type", doc.originalMimeType || "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename="${doc.storageKey}"`);
-
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
-  } catch (error) {
-    console.error("Error streaming verification request document:", error);
-    res.status(500).json({ error: "Failed to stream document" });
   }
 });
 

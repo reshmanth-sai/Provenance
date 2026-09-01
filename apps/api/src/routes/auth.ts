@@ -1,12 +1,9 @@
 import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { prisma, hashPassword, comparePassword } from "@provenance/db";
-import { authenticateToken, requireRole, JwtTokenPayload } from "../middleware/auth.js";
+import { authenticateToken, requireRole, JwtTokenPayload, JWT_SECRET, JWT_REFRESH_SECRET } from "../middleware/auth.js";
 
 const router = Router();
-
-const JWT_SECRET = process.env.JWT_SECRET || "placeholder_jwt_secret_phase0";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "placeholder_jwt_refresh_secret_phase0";
 
 // POST /auth/register
 router.post("/register", async (req: Request, res: Response): Promise<void> => {
