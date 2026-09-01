@@ -53,25 +53,24 @@ export default function CandidateDashboard() {
     try {
       // 1. Fetch Profile
       const profRes = await apiFetch("/candidate/profile");
+      let currentProfile: CandidateProfile | null = null;
       if (profRes.ok) {
         const pData = await profRes.json();
+        currentProfile = pData.profile;
         setProfile(pData.profile);
       }
 
-      // 2. Fetch Public Profile by username if available, or load credentials
-      if (profRes.ok) {
-        const pData = await profRes.json();
-        if (pData?.profile?.publicUsername) {
-          const pubRes = await fetch(`http://localhost:4000/u/${pData.profile.publicUsername}`);
-          if (pubRes.ok) {
-            const pubData = await pubRes.json();
-            const all = [
-              ...pubData.credentials.verified.map((c: any) => ({ ...c, status: "verified" })),
-              ...pubData.credentials.revoked.map((c: any) => ({ ...c, status: "revoked" })),
-              ...pubData.credentials.unconfirmed.map((c: any) => ({ ...c, status: c.status === "verification_requested" ? "pending" : "unverified" })),
-            ];
-            setCredentials(all);
-          }
+      // 2. Fetch Public Profile by username if available
+      if (currentProfile?.publicUsername) {
+        const pubRes = await fetch(`http://localhost:4000/u/${currentProfile.publicUsername}`);
+        if (pubRes.ok) {
+          const pubData = await pubRes.json();
+          const all = [
+            ...(pubData.credentials?.verified || []).map((c: any) => ({ ...c, status: "verified" })),
+            ...(pubData.credentials?.revoked || []).map((c: any) => ({ ...c, status: "revoked" })),
+            ...(pubData.credentials?.unconfirmed || []).map((c: any) => ({ ...c, status: c.status === "verification_requested" ? "pending" : "unverified" })),
+          ];
+          setCredentials(all);
         }
       }
     } catch (err) {

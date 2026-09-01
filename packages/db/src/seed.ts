@@ -264,7 +264,11 @@ async function main() {
   });
 
   // 8. Ensure test files exist in storage/uploads
-  const uploadsDir = path.resolve(process.cwd(), "../../storage/uploads");
+  const candidates = [
+    path.resolve(process.cwd(), "storage/uploads"),
+    path.resolve(process.cwd(), "../../storage/uploads"),
+  ];
+  const uploadsDir = candidates.find((c) => fs.existsSync(path.dirname(c))) || candidates[0];
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }

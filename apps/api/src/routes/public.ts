@@ -15,12 +15,21 @@ const verifyLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Rate limiter for public profile endpoints (60 requests per minute per IP)
+const profileLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { error: "Too many profile requests from this IP, please try again after a minute." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 /**
  * GET /u/:username
  * Public candidate profile showing verified, revoked, and unconfirmed credentials.
  * Excludes rejected credentials and leaks zero internal IDs or emails.
  */
-router.get("/u/:username", async (req: Request, res: Response): Promise<void> => {
+router.get("/u/:username", profileLimiter, async (req: Request, res: Response): Promise<void> => {
   const { username } = req.params;
 
   try {
