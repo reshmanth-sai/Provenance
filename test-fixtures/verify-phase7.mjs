@@ -151,10 +151,10 @@ async function run() {
   console.log(`Magic Byte Security Enforcement in Browser UI: ${spoofedDocsInDb === "0" ? "PASS" : "FAIL"}`);
 
   // -----------------------------------------------------------------------------
-  // STEP 6: One Continuous Cold-Start End-to-End Walkthrough
+  // STEP 5: One Continuous Cold-Start End-to-End Walkthrough
   // -----------------------------------------------------------------------------
   console.log("\n================================================================================");
-  console.log("STEP 6: Continuous Cold-Start End-to-End Demo Script Walkthrough");
+  console.log("STEP 5: Continuous Cold-Start End-to-End Demo Script Walkthrough");
   console.log("================================================================================");
 
   // Ensure flagged degree PDF exists for demo walkthrough
