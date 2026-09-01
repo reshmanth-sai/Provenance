@@ -9,6 +9,7 @@ import candidateRoutes from "./routes/candidate.js";
 import documentRoutes from "./routes/documents.js";
 import adminRoutes from "./routes/admin.js";
 import issuerRoutes from "./routes/issuer.js";
+import publicRoutes from "./routes/public.js";
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use("/candidate", candidateRoutes);
 app.use("/documents", documentRoutes);
 app.use("/admin", adminRoutes);
 app.use("/issuer", issuerRoutes);
+app.use("/", publicRoutes);
 
 app.get("/health", async (_req: Request, res: Response) => {
   try {

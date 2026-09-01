@@ -8,15 +8,24 @@ generator client {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  role         String   // candidate | issuer_staff | platform_admin
-  createdAt    DateTime @default(now())
+  id                String                @id @default(uuid())
+  email             String                @unique
+  passwordHash      String
+  role              String                // candidate | issuer_staff | platform_admin
+  createdAt         DateTime              @default(now())
+  profile           CandidateProfile?
+  documents         Document[]
+  credentials       Credential[]
+  requests          VerificationRequest[]
+  eventsCreated     CredentialEvent[]
+  issuerMemberships IssuerUser[]
+  invitesSent       InstitutionInvite[]
+  auditLogs         AuditLog[]
 }
 
 model CandidateProfile {
   userId         String  @id
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   publicUsername String  @unique
   name           String
   headline       String?
@@ -25,25 +34,32 @@ model CandidateProfile {
 }
 
 model Issuer {
-  id         String    @id @default(uuid())
-  name       String
-  domain     String    @unique
-  status     String    @default("pending") // pending | approved | rejected
-  approvedBy String?
-  approvedAt DateTime?
-  createdAt  DateTime  @default(now())
+  id               String                @id @default(uuid())
+  name             String
+  domain           String                @unique
+  status           String                @default("pending") // pending | approved | rejected
+  approvedBy       String?
+  approvedAt       DateTime?
+  createdAt        DateTime              @default(now())
+  members          IssuerUser[]
+  credentials      Credential[]
+  requests         VerificationRequest[]
+  credentialEvents CredentialEvent[]
 }
 
 model IssuerUser {
   id       String @id @default(uuid())
   issuerId String
+  issuer   Issuer @relation(fields: [issuerId], references: [id], onDelete: Cascade)
   userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   role     String @default("staff")
 }
 
 model Document {
-  id                   String   @id @default(uuid())
+  id                   String             @id @default(uuid())
   candidateId          String
+  candidate            User               @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   storageKey           String
   originalMimeType     String
   rawFileHash          String
@@ -52,14 +68,17 @@ model Document {
   phash                String?
   ocrText              String?
   ocrConfidence        Float?
-  c2paPresent          Boolean  @default(false)
+  c2paPresent          Boolean            @default(false)
   c2paManifest         Json?
-  uploadedAt           DateTime @default(now())
+  uploadedAt           DateTime           @default(now())
+  analyses             DocumentAnalysis[]
+  credentials          Credential[]
 }
 
 model DocumentAnalysis {
   id          String   @id @default(uuid())
   documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
   signalType  String
   signalValue Json
   severity    String   // low_concern | review_recommended | inconclusive
@@ -67,40 +86,51 @@ model DocumentAnalysis {
 }
 
 model Credential {
-  id                String    @id @default(uuid())
-  candidateId       String
-  issuerId          String?
-  documentId        String?
-  source            String    // self_submitted | issuer_issued
-  status            String    @default("unverified") // unverified | pending | verified | rejected | revoked
-  credentialType    String
-  credentialTitle   String
-  issueDate         DateTime?
-  certificateNumber String?
-  createdAt         DateTime  @default(now())
+  id                   String                @id @default(uuid())
+  candidateId          String
+  candidate            User                  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  issuerId             String?
+  issuer               Issuer?               @relation(fields: [issuerId], references: [id], onDelete: SetNull)
+  documentId           String?
+  document             Document?             @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  source               String                // self_submitted | issuer_issued
+  status               String                @default("unverified") // unverified | pending | verified | rejected | revoked
+  credentialType       String
+  credentialTitle      String
+  issueDate            DateTime?
+  certificateNumber    String?
+  createdAt            DateTime              @default(now())
+  verificationRequests VerificationRequest[]
+  credentialEvents     CredentialEvent[]
 }
 
 model VerificationRequest {
-  id           String    @id @default(uuid())
+  id           String     @id @default(uuid())
   credentialId String
+  credential   Credential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
   candidateId  String
+  candidate    User       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   issuerId     String
-  status       String    @default("pending") // pending | approved | rejected
-  requestedAt  DateTime  @default(now())
+  issuer       Issuer     @relation(fields: [issuerId], references: [id], onDelete: Cascade)
+  status       String     @default("pending") // pending | approved | rejected
+  requestedAt  DateTime   @default(now())
   resolvedAt   DateTime?
   resolvedBy   String?
 }
 
 model CredentialEvent {
-  id            String   @id @default(uuid())
+  id            String     @id @default(uuid())
   credentialId  String
+  credential    Credential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
   issuerId      String
-  eventType     String   // issued | verified | rejected | revoked
+  issuer        Issuer     @relation(fields: [issuerId], references: [id], onDelete: Cascade)
+  eventType     String     // issued | verified | rejected | revoked
   canonicalData Json
   contentHash   String
   prevHash      String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime   @default(now())
   createdBy     String
+  creator       User       @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 
   @@index([issuerId, createdAt])
 }
@@ -108,6 +138,7 @@ model CredentialEvent {
 model InstitutionInvite {
   id              String   @id @default(uuid())
   invitedBy       String
+  inviter         User     @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
   institutionName String
   contactEmail    String?
   status          String   @default("sent") // sent | joined
@@ -117,6 +148,7 @@ model InstitutionInvite {
 model AuditLog {
   id         String   @id @default(uuid())
   actorId    String
+  actor      User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
   action     String
   targetType String
   targetId   String?
