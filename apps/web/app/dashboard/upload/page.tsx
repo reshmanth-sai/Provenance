@@ -284,33 +284,48 @@ export default function CandidateUploadPage() {
         <div className="space-y-6">
           {/* Severity Banner */}
           {hasReviewRecommended ? (
-            <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl flex items-center gap-3 text-amber-900 shadow-sm">
-              <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0" />
-              <div className="space-y-0.5">
-                <h4 className="text-sm font-bold">Review Recommended</h4>
-                <p className="text-xs text-amber-700">
-                  Deterministic analysis detected signals that may warrant human reviewer attention. Review the extracted facts below.
-                </p>
+            <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl flex items-start gap-3 text-amber-900 shadow-sm">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-1.5 flex-1">
+                <div>
+                  <h4 className="text-sm font-bold">Review Recommended</h4>
+                  <p className="text-xs text-amber-700">
+                    Deterministic analysis detected signals that may warrant human reviewer attention. Review the extracted facts below.
+                  </p>
+                </div>
+                <div className="pt-1.5 border-t border-amber-200 text-[11px] font-medium text-amber-800">
+                  This reflects automated file checks only. It is not a verification — only {claimedIssuerName.trim() || "the issuing institution"} confirming this credential makes it verified.
+                </div>
               </div>
             </div>
           ) : hasInconclusive ? (
-            <div className="p-4 bg-blue-50 border border-blue-300 rounded-xl flex items-center gap-3 text-blue-900 shadow-sm">
-              <HelpCircle className="w-6 h-6 text-blue-600 shrink-0" />
-              <div className="space-y-0.5">
-                <h4 className="text-sm font-bold">Analysis Inconclusive</h4>
-                <p className="text-xs text-blue-700">
-                  Document scanned with low OCR confidence or image-only structure. Institutional verification is recommended.
-                </p>
+            <div className="p-4 bg-blue-50 border border-blue-300 rounded-xl flex items-start gap-3 text-blue-900 shadow-sm">
+              <HelpCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+              <div className="space-y-1.5 flex-1">
+                <div>
+                  <h4 className="text-sm font-bold">Analysis Inconclusive</h4>
+                  <p className="text-xs text-blue-700">
+                    Document scanned with low OCR confidence or image-only structure. Institutional verification is recommended.
+                  </p>
+                </div>
+                <div className="pt-1.5 border-t border-blue-200 text-[11px] font-medium text-blue-800">
+                  This reflects automated file checks only. It is not a verification — only {claimedIssuerName.trim() || "the issuing institution"} confirming this credential makes it verified.
+                </div>
               </div>
             </div>
           ) : (
-            <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center gap-3 text-emerald-900 shadow-sm">
-              <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
-              <div className="space-y-0.5">
-                <h4 className="text-sm font-bold">Deterministic Analysis Complete — Low Concern</h4>
-                <p className="text-xs text-emerald-700">
-                  All automated structural checks passed with no anomalies detected.
-                </p>
+            <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl flex items-start gap-3 text-emerald-900 shadow-sm">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="space-y-1.5 flex-1">
+                <div>
+                  <h4 className="text-sm font-bold">Deterministic Analysis Complete — Low Concern</h4>
+                  <p className="text-xs text-emerald-700">
+                    All automated structural checks passed with no anomalies detected.
+                  </p>
+                </div>
+                <div className="pt-1.5 border-t border-emerald-200 text-[11px] font-medium text-emerald-800">
+                  This reflects automated file checks only. It is not a verification — only {claimedIssuerName.trim() || "the issuing institution"} confirming this credential makes it verified.
+                </div>
               </div>
             </div>
           )}

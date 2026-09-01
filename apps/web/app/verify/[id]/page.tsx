@@ -150,13 +150,35 @@ export default function PublicVerifyPage() {
       )}
 
       {isPending && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-3 text-blue-900 shadow-sm">
-          <Clock className="w-6 h-6 text-blue-600 shrink-0" />
-          <div className="space-y-0.5">
-            <h4 className="text-sm font-bold">Verification Pending</h4>
-            <p className="text-xs text-blue-700">
-              This is a self-submitted credential awaiting formal attestation from {credential.institution || "the claimed institution"}.
-            </p>
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3 text-blue-900 shadow-sm">
+          <Clock className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+          <div className="space-y-1.5 flex-1">
+            <div>
+              <h4 className="text-sm font-bold">Verification Pending</h4>
+              <p className="text-xs text-blue-700">
+                This is a self-submitted credential awaiting formal attestation from {credential.institution || "the claimed institution"}.
+              </p>
+            </div>
+            <div className="pt-1.5 border-t border-blue-200 text-[11px] font-medium text-blue-800">
+              This reflects automated file checks only. It is not a verification — only {credential.institution || "the issuing institution"} confirming this credential makes it verified.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {verification.status === "unverified" && !isPending && !isVerified && !isRevoked && (
+        <div className="p-4 bg-gray-50 border border-gray-300 rounded-xl flex items-start gap-3 text-gray-900 shadow-sm">
+          <FileText className="w-5 h-5 text-gray-500 shrink-0 mt-0.5" />
+          <div className="space-y-1.5 flex-1">
+            <div>
+              <h4 className="text-sm font-bold">Self-Submitted Credential (Unconfirmed)</h4>
+              <p className="text-xs text-gray-600">
+                This credential was uploaded by the candidate and has not been confirmed or anchored to an institutional ledger.
+              </p>
+            </div>
+            <div className="pt-1.5 border-t border-gray-200 text-[11px] font-medium text-gray-700">
+              This reflects automated file checks only. It is not a verification — only {credential.institution || "the issuing institution"} confirming this credential makes it verified.
+            </div>
           </div>
         </div>
       )}

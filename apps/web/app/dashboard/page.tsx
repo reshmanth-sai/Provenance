@@ -234,6 +234,11 @@ export default function CandidateDashboard() {
                       <span> • {new Date(cred.issueDate).toLocaleDateString(undefined, { year: "numeric", month: "short" })}</span>
                     )}
                   </p>
+                  {cred.status === "unverified" && (
+                    <p className="text-[11px] text-gray-500 italic">
+                      This reflects automated file checks only. It is not a verification — only {cred.institution || "the issuing institution"} confirming this credential makes it verified.
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">

@@ -296,6 +296,9 @@ export default function PublicProfilePage() {
                       <span> • {new Date(cred.issueDate).toLocaleDateString(undefined, { year: "numeric", month: "long" })}</span>
                     )}
                   </p>
+                  <p className="text-[11px] text-gray-400 italic">
+                    This reflects automated file checks only. It is not a verification — only {cred.claimedInstitution || "the issuing institution"} confirming this credential makes it verified.
+                  </p>
                 </div>
 
                 <Link
