@@ -21,6 +21,8 @@ model User {
   issuerMemberships IssuerUser[]
   invitesSent       InstitutionInvite[]
   auditLogs         AuditLog[]
+  approvedIssuers   Issuer[]              @relation("IssuerApprover")
+  resolvedRequests  VerificationRequest[] @relation("RequestResolver")
 }
 
 model CandidateProfile {
@@ -39,6 +41,7 @@ model Issuer {
   domain           String                @unique
   status           String                @default("pending") // pending | approved | rejected
   approvedBy       String?
+  approver         User?                 @relation("IssuerApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
   approvedAt       DateTime?
   createdAt        DateTime              @default(now())
   members          IssuerUser[]
@@ -116,6 +119,7 @@ model VerificationRequest {
   requestedAt  DateTime   @default(now())
   resolvedAt   DateTime?
   resolvedBy   String?
+  resolver     User?      @relation("RequestResolver", fields: [resolvedBy], references: [id], onDelete: SetNull)
 }
 
 model CredentialEvent {

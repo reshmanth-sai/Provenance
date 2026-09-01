@@ -6,7 +6,22 @@ import { prisma, hashPassword } from "./index.js";
 async function main() {
   console.log("🌱 Starting database seed...");
 
-  // 1. Candidate Test User
+  // 1. Platform Admin User (Created first so admin ID can be referenced in relations)
+  const adminEmail = "admin@provenance.test";
+  const adminPassword = "AdminPass123!";
+  const adminHash = await hashPassword(adminPassword);
+
+  const adminUser = await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: { passwordHash: adminHash, role: "platform_admin" },
+    create: {
+      email: adminEmail,
+      passwordHash: adminHash,
+      role: "platform_admin",
+    },
+  });
+
+  // 2. Candidate Test User
   const candidateEmail = "candidate@provenance.test";
   const candidatePassword = "CandidatePass123!";
   const candidateHash = await hashPassword(candidatePassword);
@@ -21,7 +36,7 @@ async function main() {
     },
   });
 
-  // 2. Issuer & Issuer Staff User
+  // 3. Issuer & Issuer Staff User
   const issuerEmail = "issuer@provenance.test";
   const issuerPassword = "IssuerPass123!";
   const issuerHash = await hashPassword(issuerPassword);
@@ -41,14 +56,14 @@ async function main() {
     update: {
       name: "Acme University",
       status: "approved",
-      approvedBy: "platform-admin-seed",
+      approvedBy: adminUser.id,
       approvedAt: new Date(),
     },
     create: {
       name: "Acme University",
       domain: "acme.edu",
       status: "approved",
-      approvedBy: "platform-admin-seed",
+      approvedBy: adminUser.id,
       approvedAt: new Date(),
     },
   });
@@ -67,38 +82,25 @@ async function main() {
     });
   }
 
-  // 3. Platform Admin User
-  const adminEmail = "admin@provenance.test";
-  const adminPassword = "AdminPass123!";
-  const adminHash = await hashPassword(adminPassword);
-
-  const adminUser = await prisma.user.upsert({
-    where: { email: adminEmail },
-    update: { passwordHash: adminHash, role: "platform_admin" },
-    create: {
-      email: adminEmail,
-      passwordHash: adminHash,
-      role: "platform_admin",
-    },
-  });
-
   console.log("Seeding complete! Test accounts created:\n");
   console.log("--------------------------------------------------");
-  console.log("1. Candidate Account:");
+  console.log("1. Platform Admin Account:");
+  console.log(`   Email:    ${adminUser.email}`);
+  console.log(`   Password: ${adminPassword}`);
+  console.log(`   Role:     ${adminUser.role}`);
+  console.log(`   ID:       ${adminUser.id}`);
+  console.log("--------------------------------------------------");
+  console.log("2. Candidate Account:");
   console.log(`   Email:    ${candidateUser.email}`);
   console.log(`   Password: ${candidatePassword}`);
   console.log(`   Role:     ${candidateUser.role}`);
   console.log("--------------------------------------------------");
-  console.log("2. Issuer Staff Account:");
+  console.log("3. Issuer Staff Account:");
   console.log(`   Email:    ${issuerStaffUser.email}`);
   console.log(`   Password: ${issuerPassword}`);
   console.log(`   Role:     ${issuerStaffUser.role}`);
   console.log(`   Issuer:   ${issuer.name} (${issuer.domain}, status: ${issuer.status})`);
-  console.log("--------------------------------------------------");
-  console.log("3. Platform Admin Account:");
-  console.log(`   Email:    ${adminUser.email}`);
-  console.log(`   Password: ${adminPassword}`);
-  console.log(`   Role:     ${adminUser.role}`);
+  console.log(`   Approved By: ${issuer.approvedBy}`);
   console.log("--------------------------------------------------");
 }
 
