@@ -7,7 +7,119 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Placeholder {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         String   // candidate | issuer_staff | platform_admin
+  createdAt    DateTime @default(now())
+}
+
+model CandidateProfile {
+  userId         String  @id
+  publicUsername String  @unique
+  name           String
+  headline       String?
+  bio            String?
+  avatarUrl      String?
+}
+
+model Issuer {
+  id         String    @id @default(uuid())
+  name       String
+  domain     String    @unique
+  status     String    @default("pending") // pending | approved | rejected
+  approvedBy String?
+  approvedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model IssuerUser {
+  id       String @id @default(uuid())
+  issuerId String
+  userId   String
+  role     String @default("staff")
+}
+
+model Document {
+  id                   String   @id @default(uuid())
+  candidateId          String
+  storageKey           String
+  originalMimeType     String
+  rawFileHash          String
+  canonicalContentHash String?
+  metadata             Json?
+  phash                String?
+  ocrText              String?
+  ocrConfidence        Float?
+  c2paPresent          Boolean  @default(false)
+  c2paManifest         Json?
+  uploadedAt           DateTime @default(now())
+}
+
+model DocumentAnalysis {
+  id          String   @id @default(uuid())
+  documentId  String
+  signalType  String
+  signalValue Json
+  severity    String   // low_concern | review_recommended | inconclusive
+  createdAt   DateTime @default(now())
+}
+
+model Credential {
+  id                String    @id @default(uuid())
+  candidateId       String
+  issuerId          String?
+  documentId        String?
+  source            String    // self_submitted | issuer_issued
+  status            String    @default("unverified") // unverified | pending | verified | rejected | revoked
+  credentialType    String
+  credentialTitle   String
+  issueDate         DateTime?
+  certificateNumber String?
+  createdAt         DateTime  @default(now())
+}
+
+model VerificationRequest {
+  id           String    @id @default(uuid())
+  credentialId String
+  candidateId  String
+  issuerId     String
+  status       String    @default("pending") // pending | approved | rejected
+  requestedAt  DateTime  @default(now())
+  resolvedAt   DateTime?
+  resolvedBy   String?
+}
+
+model CredentialEvent {
+  id            String   @id @default(uuid())
+  credentialId  String
+  issuerId      String
+  eventType     String   // issued | verified | rejected | revoked
+  canonicalData Json
+  contentHash   String
+  prevHash      String?
+  createdAt     DateTime @default(now())
+  createdBy     String
+
+  @@index([issuerId, createdAt])
+}
+
+model InstitutionInvite {
+  id              String   @id @default(uuid())
+  invitedBy       String
+  institutionName String
+  contactEmail    String?
+  status          String   @default("sent") // sent | joined
+  createdAt       DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
 }

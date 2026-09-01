@@ -11,6 +11,7 @@
     "dev:web": "npm run dev --workspace=@provenance/web",
     "db:migrate": "npm --workspace=@provenance/db run migrate --",
     "db:generate": "npm --workspace=@provenance/db run generate",
+    "db:seed": "npm --workspace=@provenance/db run seed",
     "build": "npm run build --workspaces"
   }
 }
