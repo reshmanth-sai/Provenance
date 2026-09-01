@@ -308,7 +308,7 @@ export default function PublicVerifyPage() {
                         {isBrokenDep && (
                           <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700">
                             <AlertTriangle className="w-3.5 h-3.5" />
-                            <span>Broken Dependency</span>
+                            <span>Depends on Broken Block</span>
                           </span>
                         )}
                       </div>
