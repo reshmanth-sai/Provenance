@@ -258,10 +258,18 @@ export default function CandidateUploadPage() {
                 type="text"
                 value={certificateNumber}
                 onChange={(e) => setCertificateNumber(e.target.value)}
-                placeholder="e.g. ACM-2023-9988"
+                placeholder="e.g. ACM-2023-9988 or 609H7DXPSWIC"
                 className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
               />
             </div>
+          </div>
+
+          {/* Privacy & Public Verification Notice */}
+          <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl flex items-start gap-2.5 text-blue-900 text-xs">
+            <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              If the claimed issuing institution maintains a public verification registry (such as Coursera), Provenance may query its public verification page using credential codes found in the document to cross-reference details.
+            </p>
           </div>
 
           <button

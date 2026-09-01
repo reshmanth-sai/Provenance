@@ -16,6 +16,7 @@ import { extractTextFromPdf } from "./pdf-text-extractor.js";
 import { extractImageMetadata } from "./image-metadata.js";
 import { analyzePdfStructure } from "./pdf-structure.js";
 import { rasterizePdfFirstPage } from "./pdf-rasterizer.js";
+import { runIssuerLookup } from "./issuer-connectors/index.js";
 
 const KNOWN_EDITING_TOOLS = [
   "photoshop",
@@ -593,7 +594,34 @@ export async function runDocumentAnalysisPipeline(params: PipelineParams): Promi
   }
 
   // ==========================================
-  // Stage 7: Overall Severity Computation
+  // Stage 7: Active Issuer Verification Lookup
+  // ==========================================
+  try {
+    const lookupSignal = await runIssuerLookup({
+      claimedIssuerName,
+      certificateNumber,
+      extractedText,
+      candidateName,
+      documentId,
+    });
+    if (lookupSignal) {
+      signals.push(lookupSignal);
+    }
+  } catch (lookupErr) {
+    console.warn("Issuer verification lookup caught error:", lookupErr);
+    signals.push({
+      signalType: "issuer_lookup_unavailable",
+      signalValue: {
+        fact: "Public verification lookup could not be completed at this time",
+        disclaimer:
+          "Network timeouts, third-party page layout updates, or rate limits can prevent public verification lookups from completing.",
+      },
+      severity: "inconclusive",
+    });
+  }
+
+  // ==========================================
+  // Stage 8: Overall Severity Computation
   // ==========================================
   let overallSeverity: "low_concern" | "review_recommended" | "inconclusive";
   const hasReviewRecommended = signals.some((s) => s.severity === "review_recommended");

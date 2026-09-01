@@ -76,6 +76,7 @@ model Document {
   uploadedAt           DateTime           @default(now())
   analyses             DocumentAnalysis[]
   credentials          Credential[]
+  issuerLookups        IssuerLookup[]
 
   @@index([rawFileHash])
 }
@@ -88,6 +89,21 @@ model DocumentAnalysis {
   signalValue Json
   severity    String   // low_concern | review_recommended | inconclusive
   createdAt   DateTime @default(now())
+}
+
+model IssuerLookup {
+  id          String   @id @default(uuid())
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  connectorId String
+  code        String
+  outcome     String   // name_match | name_mismatch | code_not_found | unavailable
+  httpStatus  Int?
+  rawNameHash String?  // SHA-256 hash of normalized parsed name (never plaintext)
+  checkedAt   DateTime @default(now())
+
+  @@index([connectorId, code])
+  @@index([documentId])
 }
 
 model Credential {
