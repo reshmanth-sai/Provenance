@@ -39,8 +39,13 @@ export default function Navbar() {
 
         {/* Global Quick Verifier Search */}
         <form onSubmit={handleSearch} className="hidden sm:flex items-center relative flex-1 max-w-xs">
+          <label htmlFor="globalSearchId" className="sr-only">Verify credential ID</label>
           <input
+            id="globalSearchId"
+            name="globalSearchId"
             type="text"
+            autoComplete="off"
+            aria-label="Verify credential ID"
             placeholder="Verify credential ID..."
             value={searchId}
             onChange={(e) => setSearchId(e.target.value)}

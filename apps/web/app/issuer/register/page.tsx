@@ -107,8 +107,10 @@ export default function IssuerRegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Institution Legal Name *</label>
+              <label htmlFor="instName" className="text-xs font-semibold text-gray-700">Institution Legal Name *</label>
               <input
+                id="instName"
+                name="instName"
                 type="text"
                 required
                 value={institutionName}
@@ -119,8 +121,10 @@ export default function IssuerRegisterPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Official Domain *</label>
+              <label htmlFor="instDomain" className="text-xs font-semibold text-gray-700">Official Domain *</label>
               <input
+                id="instDomain"
+                name="instDomain"
                 type="text"
                 required
                 value={domain}
@@ -132,8 +136,10 @@ export default function IssuerRegisterPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Staff Registrar Email *</label>
+              <label htmlFor="instContactEmail" className="text-xs font-semibold text-gray-700">Staff Registrar Email *</label>
               <input
+                id="instContactEmail"
+                name="instContactEmail"
                 type="email"
                 required
                 value={contactEmail}
@@ -145,8 +151,10 @@ export default function IssuerRegisterPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Staff Password *</label>
+              <label htmlFor="instPassword" className="text-xs font-semibold text-gray-700">Staff Password *</label>
               <input
+                id="instPassword"
+                name="instPassword"
                 type="password"
                 required
                 value={password}

@@ -26,13 +26,19 @@ declare global {
 const JWT_SECRET = process.env.JWT_SECRET || "placeholder_jwt_secret_phase0";
 
 export function authenticateToken(req: Request, res: Response, next: NextFunction): void {
+  let token: string | undefined;
+
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  } else if (typeof req.query.token === "string" && req.query.token) {
+    token = req.query.token;
+  }
+
+  if (!token) {
     res.status(401).json({ error: "Authentication token required" });
     return;
   }
-
-  const token = authHeader.split(" ")[1];
 
   try {
     const payload = jwt.verify(token, JWT_SECRET) as JwtTokenPayload;

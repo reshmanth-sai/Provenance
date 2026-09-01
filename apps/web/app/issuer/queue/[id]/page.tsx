@@ -65,7 +65,7 @@ export default function VerificationDetailView() {
   const params = useParams();
   const requestId = params.id as string;
   const router = useRouter();
-  const { user, isLoading, apiFetch } = useAuth();
+  const { user, isLoading, apiFetch, accessToken } = useAuth();
 
   const [request, setRequest] = useState<VerificationRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -112,19 +112,20 @@ export default function VerificationDetailView() {
 
       const json = await res.json();
       if (!res.ok) {
-        setActionError(json.error || "Failed to approve request");
+        setActionError(json.error || "Failed to approve credential");
       } else {
         await loadDetail();
       }
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Approval request failed");
+      setActionError(err instanceof Error ? err.message : "Network error");
     } finally {
       setSubmittingAction(false);
     }
   };
 
   const handleReject = async () => {
-    if (!confirm("Are you sure you want to reject this verification request?")) {
+    const reason = prompt("Enter a formal reason for rejecting this verification request:");
+    if (!reason || !reason.trim()) {
       return;
     }
 
@@ -134,16 +135,18 @@ export default function VerificationDetailView() {
     try {
       const res = await apiFetch(`/issuer/verification-requests/${requestId}/reject`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rejectionReason: reason.trim() }),
       });
 
       const json = await res.json();
       if (!res.ok) {
-        setActionError(json.error || "Failed to reject request");
+        setActionError(json.error || "Failed to reject credential");
       } else {
         await loadDetail();
       }
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Rejection request failed");
+      setActionError(err instanceof Error ? err.message : "Network error");
     } finally {
       setSubmittingAction(false);
     }
@@ -172,7 +175,9 @@ export default function VerificationDetailView() {
   const { credential, candidate, status } = request;
   const analyses = credential.document?.analyses || [];
   const hasWarnings = analyses.some((a) => a.severity === "review_recommended");
-  const documentUrl = `${API_BASE}/issuer/verification-requests/${requestId}/document`;
+  const documentUrl = accessToken
+    ? `${API_BASE}/issuer/verification-requests/${requestId}/document?token=${encodeURIComponent(accessToken)}`
+    : `${API_BASE}/issuer/verification-requests/${requestId}/document`;
 
   return (
     <div className="space-y-6 py-4">

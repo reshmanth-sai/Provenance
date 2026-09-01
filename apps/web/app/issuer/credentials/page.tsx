@@ -152,8 +152,10 @@ export default function CredentialRosterPage() {
 
             <form onSubmit={handleRevokeSubmit} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-700">Reason for Revocation *</label>
+                <label htmlFor="revokeReason" className="text-xs font-semibold text-gray-700">Reason for Revocation *</label>
                 <input
+                  id="revokeReason"
+                  name="revokeReason"
                   type="text"
                   required
                   value={revokeReason}

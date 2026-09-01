@@ -139,8 +139,10 @@ export default function DirectIssuePage() {
       ) : (
         <form onSubmit={handleSubmit} className="p-6 sm:p-8 bg-surface-card rounded-2xl border border-gray-200 shadow-sm space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-700">Recipient / Candidate Email *</label>
+            <label htmlFor="candidateEmail" className="text-xs font-semibold text-gray-700">Recipient / Candidate Email *</label>
             <input
+              id="candidateEmail"
+              name="candidateEmail"
               type="email"
               required
               value={candidateEmail}
@@ -152,8 +154,10 @@ export default function DirectIssuePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Credential Type *</label>
+              <label htmlFor="issueCredentialType" className="text-xs font-semibold text-gray-700">Credential Type *</label>
               <select
+                id="issueCredentialType"
+                name="issueCredentialType"
                 value={credentialType}
                 onChange={(e) => setCredentialType(e.target.value)}
                 className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
@@ -166,8 +170,10 @@ export default function DirectIssuePage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Conferral / Issue Date</label>
+              <label htmlFor="issueConferralDate" className="text-xs font-semibold text-gray-700">Conferral / Issue Date</label>
               <input
+                id="issueConferralDate"
+                name="issueConferralDate"
                 type="date"
                 value={issueDate}
                 onChange={(e) => setIssueDate(e.target.value)}
@@ -177,8 +183,10 @@ export default function DirectIssuePage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-700">Credential Title *</label>
+            <label htmlFor="issueCredentialTitle" className="text-xs font-semibold text-gray-700">Credential Title *</label>
             <input
+              id="issueCredentialTitle"
+              name="issueCredentialTitle"
               type="text"
               required
               value={credentialTitle}
@@ -189,8 +197,10 @@ export default function DirectIssuePage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-700">Certificate / Document ID</label>
+            <label htmlFor="issueCertNumber" className="text-xs font-semibold text-gray-700">Certificate / Document ID</label>
             <input
+              id="issueCertNumber"
+              name="issueCertNumber"
               type="text"
               value={certificateNumber}
               onChange={(e) => setCertificateNumber(e.target.value)}

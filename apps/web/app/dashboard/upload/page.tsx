@@ -170,9 +170,11 @@ export default function CandidateUploadPage() {
         <form onSubmit={handleSubmit} className="p-6 sm:p-8 bg-surface-card rounded-2xl border border-gray-200 shadow-sm space-y-6">
           {/* Dropzone */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-gray-700">Document File (PDF, PNG, JPG) *</label>
+            <label htmlFor="documentFile" className="text-xs font-semibold text-gray-700">Document File (PDF, PNG, JPG) *</label>
             <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-accent/50 transition-colors bg-surface flex flex-col items-center justify-center gap-2 cursor-pointer relative">
               <input
+                id="documentFile"
+                name="documentFile"
                 type="file"
                 accept=".pdf,.png,.jpg,.jpeg"
                 required
@@ -191,8 +193,10 @@ export default function CandidateUploadPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Claimed Issuing Institution *</label>
+              <label htmlFor="claimedIssuerName" className="text-xs font-semibold text-gray-700">Claimed Issuing Institution *</label>
               <input
+                id="claimedIssuerName"
+                name="claimedIssuerName"
                 type="text"
                 required
                 value={claimedIssuerName}
@@ -203,8 +207,10 @@ export default function CandidateUploadPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Credential Type *</label>
+              <label htmlFor="credentialType" className="text-xs font-semibold text-gray-700">Credential Type *</label>
               <select
+                id="credentialType"
+                name="credentialType"
                 value={credentialType}
                 onChange={(e) => setCredentialType(e.target.value)}
                 className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
@@ -218,8 +224,10 @@ export default function CandidateUploadPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-700">Credential Title *</label>
+            <label htmlFor="credentialTitle" className="text-xs font-semibold text-gray-700">Credential Title *</label>
             <input
+              id="credentialTitle"
+              name="credentialTitle"
               type="text"
               required
               value={credentialTitle}
@@ -231,8 +239,10 @@ export default function CandidateUploadPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Conferral / Issue Date</label>
+              <label htmlFor="issueDate" className="text-xs font-semibold text-gray-700">Conferral / Issue Date</label>
               <input
+                id="issueDate"
+                name="issueDate"
                 type="date"
                 value={issueDate}
                 onChange={(e) => setIssueDate(e.target.value)}
@@ -241,8 +251,10 @@ export default function CandidateUploadPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Certificate / Document ID</label>
+              <label htmlFor="certificateNumber" className="text-xs font-semibold text-gray-700">Certificate / Document ID</label>
               <input
+                id="certificateNumber"
+                name="certificateNumber"
                 type="text"
                 value={certificateNumber}
                 onChange={(e) => setCertificateNumber(e.target.value)}

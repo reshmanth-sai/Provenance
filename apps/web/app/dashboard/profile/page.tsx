@@ -121,8 +121,10 @@ export default function CandidateProfileEditor() {
 
       <form onSubmit={handleSubmit} className="p-6 sm:p-8 bg-surface-card rounded-2xl border border-gray-200 shadow-sm space-y-5">
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-700">Full Name *</label>
+          <label htmlFor="fullName" className="text-xs font-semibold text-gray-700">Full Name *</label>
           <input
+            id="fullName"
+            name="fullName"
             type="text"
             required
             value={name}
@@ -133,12 +135,14 @@ export default function CandidateProfileEditor() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-700">Public Username Handle *</label>
+          <label htmlFor="publicUsername" className="text-xs font-semibold text-gray-700">Public Username Handle *</label>
           <div className="flex items-center">
             <span className="px-3 py-2 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-xs text-gray-500 font-mono">
               /u/
             </span>
             <input
+              id="publicUsername"
+              name="publicUsername"
               type="text"
               required
               value={publicUsername}
@@ -151,8 +155,10 @@ export default function CandidateProfileEditor() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-700">Professional Headline</label>
+          <label htmlFor="headline" className="text-xs font-semibold text-gray-700">Professional Headline</label>
           <input
+            id="headline"
+            name="headline"
             type="text"
             value={headline}
             onChange={(e) => setHeadline(e.target.value)}
@@ -162,8 +168,10 @@ export default function CandidateProfileEditor() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-700">Bio / Summary</label>
+          <label htmlFor="bio" className="text-xs font-semibold text-gray-700">Bio / Summary</label>
           <textarea
+            id="bio"
+            name="bio"
             rows={3}
             value={bio}
             onChange={(e) => setBio(e.target.value)}
@@ -173,8 +181,10 @@ export default function CandidateProfileEditor() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-700">Avatar Image URL</label>
+          <label htmlFor="avatarUrl" className="text-xs font-semibold text-gray-700">Avatar Image URL</label>
           <input
+            id="avatarUrl"
+            name="avatarUrl"
             type="url"
             value={avatarUrl}
             onChange={(e) => setAvatarUrl(e.target.value)}

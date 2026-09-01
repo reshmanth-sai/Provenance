@@ -65,8 +65,10 @@ export default function RegisterPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-700">Email Address</label>
+          <label htmlFor="regEmail" className="text-xs font-semibold text-gray-700">Email Address</label>
           <input
+            id="regEmail"
+            name="regEmail"
             type="email"
             required
             value={email}
@@ -77,8 +79,10 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-700">Password</label>
+          <label htmlFor="regPassword" className="text-xs font-semibold text-gray-700">Password</label>
           <input
+            id="regPassword"
+            name="regPassword"
             type="password"
             required
             value={password}
@@ -89,8 +93,10 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-700">Confirm Password</label>
+          <label htmlFor="confirmPassword" className="text-xs font-semibold text-gray-700">Confirm Password</label>
           <input
+            id="confirmPassword"
+            name="confirmPassword"
             type="password"
             required
             value={confirmPassword}
