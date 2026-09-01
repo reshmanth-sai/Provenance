@@ -90,8 +90,9 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
       role: user.role,
     };
 
-    // Issue 15-minute JWT access token
-    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "15m" });
+    // Issue JWT access token (15m default, configurable via env for testing)
+    const accessExpiry = (process.env.JWT_ACCESS_EXPIRY || "15m") as string;
+    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: accessExpiry as any });
 
     // Issue 7-day JWT refresh token in httpOnly cookie
     const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: "7d" });
@@ -152,8 +153,9 @@ router.post("/refresh", async (req: Request, res: Response): Promise<void> => {
       role: user.role,
     };
 
-    // Issue fresh 15-minute access token
-    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "15m" });
+    // Issue fresh access token (15m default, configurable via env for testing)
+    const accessExpiry = (process.env.JWT_ACCESS_EXPIRY || "15m") as string;
+    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: accessExpiry as any });
 
     res.status(200).json({
       accessToken,
