@@ -1,0 +1,16 @@
+{
+  "name": "provenance",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace=@provenance/api",
+    "dev:web": "npm run dev --workspace=@provenance/web",
+    "db:migrate": "npm --workspace=@provenance/db run migrate --",
+    "db:generate": "npm --workspace=@provenance/db run generate",
+    "build": "npm run build --workspaces"
+  }
+}
