@@ -32,10 +32,19 @@ npm install
 
 ### 3. Start Database Service
 
-Bring up the PostgreSQL container:
-
+**Option A: Using Docker Compose (Recommended if Docker is installed)**
 ```bash
 docker-compose up -d
+```
+
+**Option B: Using Native PostgreSQL 16 (Homebrew)**
+```bash
+# Start PostgreSQL service
+brew services start postgresql@16
+
+# Ensure postgres role and provenance database exist (first-time only)
+psql -d postgres -c "CREATE ROLE postgres WITH SUPERUSER LOGIN PASSWORD 'postgres';"
+psql -U postgres -d postgres -c "CREATE DATABASE provenance;"
 ```
 
 ### 4. Run Database Migrations
