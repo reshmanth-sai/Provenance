@@ -1,4 +1,7 @@
-import pdfParse from "pdf-parse";
+import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
+import os from "os";
 import tesseract from "node-tesseract-ocr";
 import { distance } from "fastest-levenshtein";
 import { prisma } from "@provenance/db";
@@ -9,6 +12,7 @@ import {
   CredentialStructuredFields,
 } from "./hash-utils.js";
 import { ValidatedFile } from "./file-storage.js";
+import { extractTextFromPdf } from "./pdf-text-extractor.js";
 
 const KNOWN_EDITING_TOOLS = [
   "photoshop",
@@ -237,19 +241,29 @@ export async function runDocumentAnalysisPipeline(params: {
 
   if (file.mimeType === "application/pdf") {
     try {
-      const parse = typeof pdfParse === "function" ? pdfParse : (pdfParse as any).default;
-      const parsedPdf = await parse(fileBuffer);
-      extractedText = parsedPdf?.text || "";
-      console.log("[Pipeline] Extracted text length from pdf-parse:", extractedText.length);
+      extractedText = extractTextFromPdf(file.filePath);
     } catch (e) {
-      console.error("[Pipeline] pdf-parse error details:", e);
+      console.warn("PDF text extraction error:", e);
     }
   }
 
   // Fallback to Tesseract OCR if text is empty/minimal or if image file
   if (!extractedText || extractedText.trim().length < 10) {
+    let ocrInputPath = file.filePath;
+    let tempOcrPng: string | null = null;
+
+    if (file.mimeType === "application/pdf") {
+      tempOcrPng = path.join(os.tmpdir(), `ocr_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.png`);
+      try {
+        execSync(`sips -s format png "${file.filePath}" --out "${tempOcrPng}" 2>/dev/null`);
+        if (fs.existsSync(tempOcrPng)) {
+          ocrInputPath = tempOcrPng;
+        }
+      } catch (_sipsErr) {}
+    }
+
     try {
-      const ocrResult = await tesseract.recognize(file.filePath, {
+      const ocrResult = await tesseract.recognize(ocrInputPath, {
         lang: "eng",
         oem: 1,
         psm: 3,
@@ -259,6 +273,10 @@ export async function runDocumentAnalysisPipeline(params: {
     } catch (e) {
       console.warn("OCR fallback error:", e);
       extractionFailed = true;
+    } finally {
+      if (tempOcrPng && fs.existsSync(tempOcrPng)) {
+        fs.unlinkSync(tempOcrPng);
+      }
     }
   }
 
@@ -315,14 +333,26 @@ export async function runDocumentAnalysisPipeline(params: {
     }
   } else {
     extractionFailed = true;
+    signals.push({
+      signalType: "text_extraction_unreadable",
+      signalValue: {
+        fact: "Automated text extraction could not recover legible text content from this document",
+        disclaimer:
+          "Low-resolution scans, non-standard fonts, or complex visual layouts can prevent automated text extraction.",
+      },
+      severity: "inconclusive",
+    });
   }
 
   // Stage 7: Signal Assembly & Overall Severity Computation
   let overallSeverity: "low_concern" | "review_recommended" | "inconclusive";
-  if (extractionFailed && signals.length === 0) {
-    overallSeverity = "inconclusive";
-  } else if (signals.length > 0) {
+  const hasReviewRecommended = signals.some((s) => s.severity === "review_recommended");
+  const hasInconclusive = signals.some((s) => s.severity === "inconclusive") || extractionFailed;
+
+  if (hasReviewRecommended) {
     overallSeverity = "review_recommended";
+  } else if (hasInconclusive) {
+    overallSeverity = "inconclusive";
   } else {
     overallSeverity = "low_concern";
   }
