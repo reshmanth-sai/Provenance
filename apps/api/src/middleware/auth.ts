@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { prisma, Issuer } from "@provenance/db";
 
 export interface AuthUser {
   id: string;
@@ -17,6 +18,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: AuthUser;
+      issuer?: Issuer;
     }
   }
 }
@@ -60,4 +62,54 @@ export function requireRole(...allowedRoles: string[]) {
 
     next();
   };
+}
+
+/**
+ * Authorization gate for issuer actions.
+ * Checks that the authenticated issuer staff member belongs to an Issuer whose status is 'approved'.
+ */
+export async function requireApprovedIssuer(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  try {
+    // Find issuer linked to this user
+    const issuerUser = await prisma.issuerUser.findFirst({
+      where: { userId: req.user.id },
+    });
+
+    if (!issuerUser) {
+      res.status(403).json({ error: "Forbidden: no institution profile linked to this user" });
+      return;
+    }
+
+    const issuer = await prisma.issuer.findUnique({
+      where: { id: issuerUser.issuerId },
+    });
+
+    if (!issuer) {
+      res.status(403).json({ error: "Forbidden: linked institution not found" });
+      return;
+    }
+
+    if (issuer.status !== "approved") {
+      res.status(403).json({
+        error: "Forbidden: institution account is pending administrator approval or has been rejected",
+        institutionStatus: issuer.status,
+      });
+      return;
+    }
+
+    req.issuer = issuer;
+    next();
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error during authorization check" });
+    return;
+  }
 }
