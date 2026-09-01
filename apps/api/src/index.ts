@@ -5,16 +5,20 @@ import dotenv from "dotenv";
 import { rateLimit } from "express-rate-limit";
 import { prisma } from "@provenance/db";
 import authRoutes from "./routes/auth.js";
+import candidateRoutes from "./routes/candidate.js";
+import documentRoutes from "./routes/documents.js";
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 4000;
 
-app.use(cors({
-  origin: true,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 app.use(cookieParser());
 app.use(express.json());
 
@@ -28,6 +32,8 @@ const authLimiter = rateLimit({
 });
 
 app.use("/auth", authLimiter, authRoutes);
+app.use("/candidate", candidateRoutes);
+app.use("/documents", documentRoutes);
 
 app.get("/health", async (_req: Request, res: Response) => {
   try {

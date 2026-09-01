@@ -128,15 +128,6 @@ router.get("/me", authenticateToken, (req: Request, res: Response): void => {
 
 // Diagnostic routes (temporary test endpoints)
 router.get(
-  "/test-candidate-only",
-  authenticateToken,
-  requireRole("candidate"),
-  (_req: Request, res: Response): void => {
-    res.status(200).json({ ok: true });
-  }
-);
-
-router.get(
   "/test-issuer-only",
   authenticateToken,
   requireRole("issuer_staff"),
