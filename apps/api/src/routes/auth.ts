@@ -126,23 +126,4 @@ router.get("/me", authenticateToken, (req: Request, res: Response): void => {
   });
 });
 
-// Diagnostic routes (temporary test endpoints)
-router.get(
-  "/test-issuer-only",
-  authenticateToken,
-  requireRole("issuer_staff"),
-  (_req: Request, res: Response): void => {
-    res.status(200).json({ ok: true });
-  }
-);
-
-router.get(
-  "/test-admin-only",
-  authenticateToken,
-  requireRole("platform_admin"),
-  (_req: Request, res: Response): void => {
-    res.status(200).json({ ok: true });
-  }
-);
-
 export default router;
