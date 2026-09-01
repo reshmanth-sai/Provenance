@@ -270,7 +270,7 @@ export async function runDocumentAnalysisPipeline(params: PipelineParams): Promi
         disclaimer:
           "Metadata is routinely stripped by messaging apps, screenshot tools, and privacy settings, and its absence does not indicate modification.",
       },
-      severity: "inconclusive",
+      severity: "low_concern",
     });
   }
 
@@ -344,7 +344,7 @@ export async function runDocumentAnalysisPipeline(params: PipelineParams): Promi
             fact: "This exact file was already submitted by this candidate account",
             disclaimer: "Re-uploading the same document is common and expected.",
           },
-          severity: "inconclusive",
+          severity: "low_concern",
         });
       }
     }
@@ -366,6 +366,10 @@ export async function runDocumentAnalysisPipeline(params: PipelineParams): Promi
           id: true,
           phash: true,
           candidateId: true,
+          credentials: {
+            select: { issuerId: true },
+            take: 1,
+          },
         },
       });
 
@@ -394,11 +398,8 @@ export async function runDocumentAnalysisPipeline(params: PipelineParams): Promi
 
         // Cross-issuer template mismatch (distance <= 6 with different approved issuerId)
         if (dist <= 6 && issuerId) {
-          const otherCredential = await prisma.credential.findFirst({
-            where: { documentId: otherDoc.id },
-            select: { issuerId: true },
-          });
-          if (otherCredential?.issuerId && otherCredential.issuerId !== issuerId) {
+          const otherIssuerId = otherDoc.credentials[0]?.issuerId;
+          if (otherIssuerId && otherIssuerId !== issuerId) {
             signals.push({
               signalType: "template_cross_issuer_mismatch",
               signalValue: {

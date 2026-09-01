@@ -29,7 +29,8 @@ app.use(
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      return callback(new Error(`CORS blocked: Origin ${origin} not permitted by allowlist`));
+      // For disallowed origins, omit Access-Control-Allow-Origin so the browser enforces the block
+      return callback(null, false);
     },
     credentials: true,
   })
@@ -65,6 +66,12 @@ app.get("/health", async (_req: Request, res: Response) => {
       message: "Service unavailable",
     });
   }
+});
+
+// Global error handler: never leak internal stack traces or filesystem paths to unauthenticated callers
+app.use((err: any, _req: Request, res: Response, _next: express.NextFunction) => {
+  console.error("Unhandled application error:", err);
+  res.status(err.status || 500).json({ error: "Internal server error" });
 });
 
 import { checkRasterizerAvailability } from "./services/pdf-rasterizer.js";
