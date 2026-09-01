@@ -59,8 +59,10 @@ export async function computePerceptualHash(buffer: Buffer, mimeType: string): P
 
   try {
     const { data } = await sharp(imgBuffer)
-      .resize(9, 8, { fit: "fill" })
+      .flatten({ background: "#ffffff" })
       .grayscale()
+      .normalize()
+      .resize(9, 8, { fit: "fill" })
       .raw()
       .toBuffer({ resolveWithObject: true });
 
