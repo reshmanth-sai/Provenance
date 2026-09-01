@@ -117,6 +117,68 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+// POST /auth/refresh
+router.post("/refresh", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken || typeof refreshToken !== "string") {
+      res.status(401).json({ error: "Refresh token required in cookie" });
+      return;
+    }
+
+    // Verify refresh token signature
+    let decoded: JwtTokenPayload;
+    try {
+      decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as JwtTokenPayload;
+    } catch {
+      res.status(401).json({ error: "Invalid or expired refresh token" });
+      return;
+    }
+
+    // Ensure user still exists
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+    });
+
+    if (!user) {
+      res.status(401).json({ error: "User no longer exists" });
+      return;
+    }
+
+    const payload: JwtTokenPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    // Issue fresh 15-minute access token
+    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "15m" });
+
+    res.status(200).json({
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Refresh error:", error);
+    res.status(500).json({ error: "Internal server error during token refresh" });
+  }
+});
+
+// POST /auth/logout
+router.post("/logout", (_req: Request, res: Response): void => {
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+  res.status(200).json({ message: "Logged out successfully" });
+});
+
 // GET /auth/me
 router.get("/me", authenticateToken, (req: Request, res: Response): void => {
   res.status(200).json({
