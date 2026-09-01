@@ -66,3 +66,17 @@ export async function validateAndStoreFile(
     filePath,
   };
 }
+
+export function getDocumentFilePath(storageKey: string): string {
+  const possiblePaths = [
+    path.resolve(process.cwd(), "../../storage/uploads", storageKey),
+    path.resolve(process.cwd(), "storage/uploads", storageKey),
+    path.resolve(process.cwd(), "../storage/uploads", storageKey),
+    path.resolve("/Users/sai/Provenance/storage/uploads", storageKey),
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) return p;
+  }
+  return path.resolve(process.cwd(), "../../storage/uploads", storageKey);
+}
+

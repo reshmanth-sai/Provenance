@@ -19,6 +19,10 @@ export default function LoginPage() {
     if (user) {
       if (user.role === "candidate") {
         router.push("/dashboard");
+      } else if (user.role === "issuer_staff") {
+        router.push("/issuer/queue");
+      } else if (user.role === "platform_admin") {
+        router.push("/admin");
       }
     }
   }, [user, router]);
@@ -29,8 +33,14 @@ export default function LoginPage() {
     setSubmitting(true);
 
     const res = await login(email, password);
-    if (res.success) {
-      router.push("/dashboard");
+    if (res.success && res.user) {
+      if (res.user.role === "candidate") {
+        router.push("/dashboard");
+      } else if (res.user.role === "issuer_staff") {
+        router.push("/issuer/queue");
+      } else if (res.user.role === "platform_admin") {
+        router.push("/admin");
+      }
     } else {
       setError(res.error || "Invalid email or password");
       setSubmitting(false);

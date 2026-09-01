@@ -1,7 +1,9 @@
+import fs from "fs";
 import { Router, Request, Response } from "express";
 import { prisma, hashPassword } from "@provenance/db";
 import { authenticateToken, requireRole, requireApprovedIssuer } from "../middleware/auth.js";
 import { appendChainEvent, verifyChain } from "../services/hash-chain.js";
+import { getDocumentFilePath } from "../services/file-storage.js";
 
 const router = Router();
 
@@ -104,6 +106,22 @@ router.get("/verification-requests", async (req: Request, res: Response): Promis
   try {
     const requests = await prisma.verificationRequest.findMany({
       where: { issuerId },
+      include: {
+        credential: {
+          include: {
+            document: {
+              include: {
+                analyses: true,
+              },
+            },
+          },
+        },
+        candidate: {
+          include: {
+            profile: true,
+          },
+        },
+      },
       orderBy: { requestedAt: "desc" },
     });
 
@@ -111,6 +129,132 @@ router.get("/verification-requests", async (req: Request, res: Response): Promis
   } catch (error) {
     console.error("Error fetching verification requests:", error);
     res.status(500).json({ error: "Failed to retrieve verification requests" });
+  }
+});
+
+/**
+ * GET /issuer/verification-requests/:id
+ * Returns a single verification request with full candidate, credential, document, and analysis signals.
+ * Strictly scoped to the caller's issuer.
+ */
+router.get("/verification-requests/:id", async (req: Request, res: Response): Promise<void> => {
+  const issuerId = req.issuer!.id;
+  const { id } = req.params;
+
+  try {
+    const request = await prisma.verificationRequest.findFirst({
+      where: { id, issuerId },
+      include: {
+        credential: {
+          include: {
+            document: {
+              include: {
+                analyses: true,
+              },
+            },
+          },
+        },
+        candidate: {
+          include: {
+            profile: true,
+          },
+        },
+      },
+    });
+
+    if (!request) {
+      res.status(404).json({ error: "Verification request not found for this institution" });
+      return;
+    }
+
+    res.status(200).json({ verificationRequest: request });
+  } catch (error) {
+    console.error("Error fetching verification request detail:", error);
+    res.status(500).json({ error: "Failed to retrieve verification request" });
+  }
+});
+
+/**
+ * GET /issuer/verification-requests/:id/document
+ * Streams the candidate's uploaded file with the correct Content-Type for inline browser rendering.
+ * Strictly gated: the verification request must belong to the caller's own issuer.
+ */
+router.get("/verification-requests/:id/document", async (req: Request, res: Response): Promise<void> => {
+  const issuerId = req.issuer!.id;
+  const { id } = req.params;
+
+  try {
+    const request = await prisma.verificationRequest.findFirst({
+      where: { id, issuerId },
+      include: {
+        credential: {
+          include: {
+            document: true,
+          },
+        },
+      },
+    });
+
+    if (!request || request.issuerId !== issuerId) {
+      res.status(404).json({ error: "Verification request not found for this institution" });
+      return;
+    }
+
+    const doc = request.credential?.document;
+    if (!doc) {
+      res.status(404).json({ error: "No document attached to this verification request" });
+      return;
+    }
+
+    const filePath = getDocumentFilePath(doc.storageKey);
+
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({ error: "Document file not found on storage disk" });
+      return;
+    }
+
+    res.setHeader("Content-Type", doc.originalMimeType || "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${doc.storageKey}"`);
+
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error("Error streaming verification request document:", error);
+    res.status(500).json({ error: "Failed to stream document" });
+  }
+});
+
+/**
+ * GET /issuer/credentials
+ * Returns all credentials issued or verified by the caller's institution.
+ */
+router.get("/credentials", async (req: Request, res: Response): Promise<void> => {
+  const issuerId = req.issuer!.id;
+
+  try {
+    const credentials = await prisma.credential.findMany({
+      where: { issuerId },
+      include: {
+        candidate: {
+          select: {
+            id: true,
+            email: true,
+            profile: {
+              select: {
+                name: true,
+                publicUsername: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json({ credentials });
+  } catch (error) {
+    console.error("Error fetching issuer credentials roster:", error);
+    res.status(500).json({ error: "Failed to fetch credentials roster" });
   }
 });
 
@@ -391,6 +535,53 @@ router.post("/credentials/:id/revoke", async (req: Request, res: Response): Prom
   } catch (error) {
     console.error("Error revoking credential:", error);
     res.status(500).json({ error: "Failed to revoke credential" });
+  }
+});
+
+/**
+ * GET /issuer/chain-audit
+ * Wraps verifyChain(issuerId) returning the full sequential event list with positions and results.
+ * Scoped strictly to the caller's own approved institution.
+ */
+router.get("/chain-audit", async (req: Request, res: Response): Promise<void> => {
+  const issuerId = req.issuer!.id;
+
+  try {
+    const rawEvents = await prisma.credentialEvent.findMany({
+      where: { issuerId },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    });
+
+    const auditResult = await verifyChain(issuerId);
+
+    // Map audit validation results back onto full event list
+    const resultMap = new Map(auditResult.events.map((e) => [e.id, e.result]));
+
+    const enrichedEvents = rawEvents.map((evt, idx) => ({
+      id: evt.id,
+      position: idx + 1,
+      eventType: evt.eventType,
+      credentialId: evt.credentialId,
+      contentHash: evt.contentHash,
+      prevHash: evt.prevHash,
+      createdAt: evt.createdAt,
+      createdBy: evt.createdBy,
+      canonicalData: evt.canonicalData,
+      result: resultMap.get(evt.id) || "valid",
+    }));
+
+    res.status(200).json({
+      issuerId,
+      institutionName: req.issuer!.name,
+      algorithm: "SHA-256",
+      chainValid: auditResult.chainValid,
+      firstBreak: auditResult.firstBreak,
+      totalEvents: enrichedEvents.length,
+      events: enrichedEvents,
+    });
+  } catch (error) {
+    console.error("Error auditing hash chain:", error);
+    res.status(500).json({ error: "Failed to audit hash chain" });
   }
 });
 

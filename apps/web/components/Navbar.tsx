@@ -79,16 +79,64 @@ export default function Navbar() {
                 </>
               )}
 
-              {/* Placeholder links for Phase 6B */}
+              {/* Issuer Staff Navigation */}
               {user.role === "issuer_staff" && (
-                <span className="text-xs px-3 py-1.5 bg-gray-100 text-gray-600 rounded">
-                  Issuer Console (Phase 6B)
-                </span>
+                <>
+                  <Link
+                    href="/issuer/queue"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                  >
+                    <span>Queue</span>
+                  </Link>
+                  <Link
+                    href="/issuer/issue"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                  >
+                    <span>Issue</span>
+                  </Link>
+                  <Link
+                    href="/issuer/credentials"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                  >
+                    <span>Roster</span>
+                  </Link>
+                  <Link
+                    href="/issuer/chain"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                  >
+                    <span>Chain</span>
+                  </Link>
+                </>
               )}
+
+              {/* Platform Admin Navigation */}
               {user.role === "platform_admin" && (
-                <span className="text-xs px-3 py-1.5 bg-gray-100 text-gray-600 rounded">
-                  Admin Console (Phase 6B)
-                </span>
+                <>
+                  <Link
+                    href="/admin"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                  >
+                    <span>Overview</span>
+                  </Link>
+                  <Link
+                    href="/admin/institutions"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                  >
+                    <span>Institutions</span>
+                  </Link>
+                  <Link
+                    href="/admin/users"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                  >
+                    <span>Users</span>
+                  </Link>
+                  <Link
+                    href="/admin/audit-log"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                  >
+                    <span>Audit Log</span>
+                  </Link>
+                </>
               )}
 
               <button

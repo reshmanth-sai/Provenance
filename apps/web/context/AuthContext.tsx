@@ -12,7 +12,7 @@ interface AuthContextType {
   user: User | null;
   accessToken: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<string | null>;
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(data.user);
       setAccessToken(data.accessToken);
-      return { success: true };
+      return { success: true, user: data.user };
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : "Network error" };
     }
