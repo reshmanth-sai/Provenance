@@ -53,7 +53,7 @@ export default function CandidateDashboard() {
     try {
       // 1. Fetch Profile
       const profRes = await apiFetch("/candidate/profile");
-      let currentProfile: CandidateProfile | null = null;
+      let currentProfile: ProfileData | null = null;
       if (profRes.ok) {
         const pData = await profRes.json();
         currentProfile = pData.profile;

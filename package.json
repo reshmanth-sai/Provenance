@@ -9,11 +9,14 @@
   "scripts": {
     "dev:api": "npm run dev --workspace=@provenance/api",
     "dev:web": "npm run dev --workspace=@provenance/web",
-    "db:migrate": "npm --workspace=@provenance/db run migrate --",
+    "db:migrate": "npm run db:backup && npm --workspace=@provenance/db run migrate --",
     "db:generate": "npm --workspace=@provenance/db run generate",
     "db:seed": "npm --workspace=@provenance/db run seed",
     "issuer:create": "npx tsx packages/db/src/create-issuer.ts",
     "admin:create": "npx tsx packages/db/src/create-admin.ts",
-    "build": "npm run build --workspaces"
+    "build": "npm run build --workspaces",
+    "db:backup": "bash scripts/db-backup.sh",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "gate": "bash scripts/gate.sh"
   }
 }

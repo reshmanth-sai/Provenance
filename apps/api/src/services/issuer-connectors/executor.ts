@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { prisma } from "@provenance/db";
 import { IssuerConnector, ConnectorLookupResult, ConnectorLookupOutcome, CodeSource } from "./types.js";
-import { DocumentAnalysisSignal } from "../analysis-pipeline.js";
+import { SignalItem } from "../analysis-pipeline.js";
 
 /**
  * Matches a parsed name against a candidate's profile name using
@@ -309,14 +309,14 @@ export async function executeIssuerLookup(params: {
 }
 
 /**
- * Builds the labeled DocumentAnalysisSignal based on lookup outcome and code source provenance.
+ * Builds the labeled SignalItem based on lookup outcome and code source provenance.
  */
 export function buildSignal(
   outcome: ConnectorLookupOutcome,
   connector: IssuerConnector,
   code: string,
   codeSource: CodeSource = "candidate_entered"
-): DocumentAnalysisSignal | undefined {
+): SignalItem | undefined {
   switch (outcome) {
     case "name_match":
       return {

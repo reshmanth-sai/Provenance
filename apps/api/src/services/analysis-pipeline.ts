@@ -47,6 +47,9 @@ export interface SignalItem {
   signalValue: {
     fact: string;
     disclaimer: string;
+    // Provenance of the credential code used for an issuer lookup. Inlined as a union
+    // rather than imported from issuer-connectors/types.ts to avoid a circular import.
+    codeSource?: "candidate_entered" | "ocr_exact" | "ocr_reconstructed";
   };
   severity: "low_concern" | "review_recommended" | "inconclusive";
 }

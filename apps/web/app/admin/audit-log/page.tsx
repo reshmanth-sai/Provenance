@@ -9,7 +9,7 @@ import { FileText, ArrowLeft, ChevronLeft, ChevronRight, Activity, ShieldCheck }
 interface AuditLogItem {
   id: string;
   action: string;
-  actorUserId: string;
+  actorId: string;
   targetType: string;
   targetId: string;
   metadata: any;
@@ -112,7 +112,7 @@ export default function AdminAuditLogPage() {
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-gray-500">
                   <p>
-                    Actor Admin: <span className="font-semibold text-gray-800">{log.actor?.email || log.actorUserId}</span>
+                    Actor Admin: <span className="font-semibold text-gray-800">{log.actor?.email || log.actorId}</span>
                   </p>
 
                   {log.metadata && (

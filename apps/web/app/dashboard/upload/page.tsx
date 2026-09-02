@@ -258,7 +258,7 @@ export default function CandidateUploadPage() {
                 type="text"
                 value={certificateNumber}
                 onChange={(e) => setCertificateNumber(e.target.value)}
-                placeholder="e.g. ACM-2023-9988 or 609H7DXPSWIC"
+                placeholder="e.g. ACM-2023-9988 or 609H7DXP5WJC"
                 className="w-full px-3 py-2 bg-surface border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
               />
             </div>

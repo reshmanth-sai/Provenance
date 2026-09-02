@@ -24,6 +24,10 @@ function sha256(data: string): string {
   return crypto.createHash("sha256").update(data, "utf8").digest("hex");
 }
 
+function sha256Buffer(data: Buffer): string {
+  return crypto.createHash("sha256").update(data).digest("hex");
+}
+
 function computeContentHash(canonicalData: any): string {
   return sha256(deterministicSerialize(canonicalData));
 }
@@ -273,22 +277,43 @@ async function main() {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
-  const samplePdfContent = Buffer.from("%PDF-1.4 sample test document buffer for Provenance seed dataset", "utf8");
+  // Seed real, structurally valid PDFs. A stub buffer starting with "%PDF-1.4" passes
+  // magic-byte validation but has no xref table, objects, or trailer, so the issuer's
+  // document preview fails to render it -- which broke the most important review screen.
+  const fixtureCandidates = [
+    path.resolve(process.cwd(), "test-fixtures"),
+    path.resolve(process.cwd(), "../../test-fixtures"),
+  ];
+  const fixturesDir = fixtureCandidates.find((c) => fs.existsSync(c));
+
+  const readFixturePdf = (name: string): Buffer => {
+    if (fixturesDir) {
+      const fixturePath = path.join(fixturesDir, name);
+      if (fs.existsSync(fixturePath)) return fs.readFileSync(fixturePath);
+    }
+    console.warn(
+      `WARNING: fixture ${name} not found. Writing a placeholder; the issuer document preview will not render.`
+    );
+    return Buffer.from(`%PDF-1.4 placeholder for ${name}`, "utf8");
+  };
+
   const docKey1 = "acme-sample-doc-1.pdf";
   const docKey2 = "acme-flagged-doc-2.pdf";
-  fs.writeFileSync(path.join(uploadsDir, docKey1), samplePdfContent);
-  fs.writeFileSync(path.join(uploadsDir, docKey2), samplePdfContent);
+  const doc1Content = readFixturePdf("clean-degree.pdf");
+  const doc2Content = readFixturePdf("flagged-degree.pdf");
+  fs.writeFileSync(path.join(uploadsDir, docKey1), doc1Content);
+  fs.writeFileSync(path.join(uploadsDir, docKey2), doc2Content);
 
   // 9. Create Documents & Analyses
   const doc1 = await prisma.document.upsert({
     where: { id: "doc-seed-alex-bs" },
-    update: {},
+    update: { storageKey: docKey1, rawFileHash: sha256Buffer(doc1Content) },
     create: {
       id: "doc-seed-alex-bs",
       candidateId: alexUser.id,
       storageKey: docKey1,
       originalMimeType: "application/pdf",
-      rawFileHash: sha256(samplePdfContent),
+      rawFileHash: sha256Buffer(doc1Content),
       canonicalContentHash: sha256("canonical-alex-bs"),
       uploadedAt: new Date("2026-02-10T09:00:00Z"),
     },
@@ -296,13 +321,13 @@ async function main() {
 
   const doc2 = await prisma.document.upsert({
     where: { id: "doc-seed-clara-cert" },
-    update: {},
+    update: { storageKey: docKey2, rawFileHash: sha256Buffer(doc2Content) },
     create: {
       id: "doc-seed-clara-cert",
       candidateId: claraUser.id,
       storageKey: docKey2,
       originalMimeType: "application/pdf",
-      rawFileHash: sha256(samplePdfContent),
+      rawFileHash: sha256Buffer(doc2Content),
       canonicalContentHash: sha256("canonical-clara-cert"),
       uploadedAt: new Date("2026-03-01T11:00:00Z"),
     },
@@ -371,7 +396,7 @@ async function main() {
   // Status C: Unverified Credential (Alex CKA)
   await prisma.credential.upsert({
     where: { id: "cred-alex-cka-unverified" },
-    update: { status: "unverified" },
+    update: { status: "unverified", claimedIssuerName: "Cloud Native Computing Foundation" },
     create: {
       id: "cred-alex-cka-unverified",
       candidateId: alexUser.id,
@@ -379,6 +404,7 @@ async function main() {
       status: "unverified",
       credentialType: "certificate",
       credentialTitle: "Certified Kubernetes Administrator (CKA)",
+      claimedIssuerName: "Cloud Native Computing Foundation",
       issueDate: new Date("2023-11-01T00:00:00Z"),
     },
   });

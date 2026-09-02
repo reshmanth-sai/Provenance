@@ -38,3 +38,10 @@ storage/uploads/*
 # Prisma
 packages/db/prisma/*.db
 packages/db/prisma/*.db-journal
+
+# Database dumps written by scripts/db-backup.sh
+backups/
+
+# Build artifacts from 'npm run gate'
+*.tsbuildinfo
+apps/web/next.log

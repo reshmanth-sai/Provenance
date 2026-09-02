@@ -30,7 +30,8 @@ export const OCR_CONFUSION_MAP: Record<string, string[]> = {
   "7": ["7", "1"],
 };
 
-export type CodeSource = "candidate_entered" | "ocr_exact" | "ocr_reconstructed";
+// CodeSource is declared once in types.ts; re-declaring it here made `export *` ambiguous.
+import type { CodeSource } from "./types.js";
 
 export interface CandidateCode {
   code: string;

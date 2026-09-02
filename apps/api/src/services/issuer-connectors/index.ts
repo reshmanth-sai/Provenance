@@ -2,7 +2,7 @@ import { IssuerConnector } from "./types.js";
 import { courseraConnector } from "./coursera.js";
 import { extractCandidateCodes, CandidateCode } from "./code-extractor.js";
 import { executeIssuerLookup, RequestBudget } from "./executor.js";
-import { DocumentAnalysisSignal } from "../analysis-pipeline.js";
+import { SignalItem } from "../analysis-pipeline.js";
 
 // Static registry of supported issuer verification connectors
 export const ISSUER_CONNECTORS: IssuerConnector[] = [
@@ -40,7 +40,7 @@ export async function runIssuerLookup(params: {
   extractedText?: string | null;
   candidateName: string;
   documentId?: string;
-}): Promise<DocumentAnalysisSignal | null> {
+}): Promise<SignalItem | null> {
   const { claimedIssuerName, certificateNumber, extractedText, candidateName, documentId } = params;
 
   const connector = findConnector(claimedIssuerName);
@@ -64,7 +64,7 @@ export async function runIssuerLookup(params: {
     maxOutboundRequests: 8,
   };
 
-  let fallbackSignal: DocumentAnalysisSignal | null = null;
+  let fallbackSignal: SignalItem | null = null;
 
   for (const cand of candidateCodes) {
     const result = await executeIssuerLookup({

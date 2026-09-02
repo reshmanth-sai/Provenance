@@ -1,4 +1,4 @@
-import { DocumentAnalysisSignal } from "../analysis-pipeline.js";
+import { SignalItem } from "../analysis-pipeline.js";
 
 export interface IssuerConnector {
   id: string;
@@ -24,5 +24,5 @@ export interface ConnectorLookupResult {
   rawNameHash: string | null;
   codeSource?: CodeSource;
   matchedTemplate?: string;
-  signal?: DocumentAnalysisSignal;
+  signal?: SignalItem;
 }

@@ -120,23 +120,23 @@ export async function extractImageMetadata(buffer: Buffer, mimeType: string): Pr
       try {
         const parsed = exifReader(sharpMeta.exif);
 
-        if (parsed.image) {
-          if (parsed.image.Software) metadata.Software = String(parsed.image.Software);
-          if (parsed.image.Make) metadata.Make = String(parsed.image.Make);
-          if (parsed.image.Model) metadata.Model = String(parsed.image.Model);
-          if (parsed.image.DateTime) {
-            modDate = parseExifDate(parsed.image.DateTime);
+        if (parsed.Image) {
+          if (parsed.Image.Software) metadata.Software = String(parsed.Image.Software);
+          if (parsed.Image.Make) metadata.Make = String(parsed.Image.Make);
+          if (parsed.Image.Model) metadata.Model = String(parsed.Image.Model);
+          if (parsed.Image.DateTime) {
+            modDate = parseExifDate(parsed.Image.DateTime);
             if (modDate) metadata.DateTime = modDate.toISOString();
           }
         }
 
-        if (parsed.exif) {
-          if (parsed.exif.DateTimeOriginal) {
-            creationDate = parseExifDate(parsed.exif.DateTimeOriginal);
+        if (parsed.Photo) {
+          if (parsed.Photo.DateTimeOriginal) {
+            creationDate = parseExifDate(parsed.Photo.DateTimeOriginal);
             if (creationDate) metadata.DateTimeOriginal = creationDate.toISOString();
           }
-          if (parsed.exif.DateTimeDigitized && !creationDate) {
-            creationDate = parseExifDate(parsed.exif.DateTimeDigitized);
+          if (parsed.Photo.DateTimeDigitized && !creationDate) {
+            creationDate = parseExifDate(parsed.Photo.DateTimeDigitized);
             if (creationDate) metadata.DateTimeDigitized = creationDate.toISOString();
           }
         }

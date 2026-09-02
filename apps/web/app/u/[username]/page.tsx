@@ -139,7 +139,7 @@ export default function PublicProfilePage() {
               {totalVerified > 0 && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>{totalVerified} Cryptographically Verified</span>
+                  <span>{totalVerified} Issuer-Confirmed</span>
                 </span>
               )}
             </div>

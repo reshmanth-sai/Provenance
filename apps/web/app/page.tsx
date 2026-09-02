@@ -22,7 +22,7 @@ export default function HomePage() {
       <section className="text-center max-w-3xl mx-auto space-y-6">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-accent-light text-accent border border-accent/20">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Cryptographically Proven Trust</span>
+          <span>Tamper-Evident Credential Records</span>
         </div>
 
         <h1 className="text-4xl sm:text-5xl font-extrabold text-primary tracking-tight leading-tight">
@@ -30,8 +30,9 @@ export default function HomePage() {
         </h1>
 
         <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
-          Provenance pairs deterministic self-upload document analysis with an immutable,
-          per-issuer tamper-evident hash chain. Trust credentials that cannot be forged, altered, or silently deleted.
+          Provenance pairs deterministic self-upload document analysis with an append-only,
+          per-issuer hash chain. Confirmed credentials cannot be altered or silently deleted without detection —
+          and self-submitted ones are labelled as exactly that, never mistaken for confirmed.
         </p>
 
         {/* Quick Verifier Form */}

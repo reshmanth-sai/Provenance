@@ -191,6 +191,13 @@ router.get("/audit-log", async (req: Request, res: Response): Promise<void> => {
         orderBy: { createdAt: "desc" },
         take: limit,
         skip: offset,
+        // Without this the log shows only a raw actorId, which makes it useless
+        // for its purpose: saying who performed each governance action.
+        include: {
+          actor: {
+            select: { id: true, email: true, role: true },
+          },
+        },
       }),
     ]);
 

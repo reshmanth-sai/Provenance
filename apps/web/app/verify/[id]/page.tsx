@@ -117,9 +117,9 @@ export default function PublicVerifyPage() {
         <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center gap-3 text-emerald-900 shadow-sm">
           <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0" />
           <div className="space-y-0.5">
-            <h4 className="text-sm font-bold">Cryptographically Verified Credential</h4>
+            <h4 className="text-sm font-bold">Issuer-Confirmed Credential</h4>
             <p className="text-xs text-emerald-700">
-              This credential has been formally attested by {credential.institution || "an authorized issuer"} and is secured on a tamper-evident SHA-256 hash chain.
+              {credential.institution || "An authorized issuer"} confirmed this credential. The record is committed to a tamper-evident SHA-256 hash chain, which shows it has not been altered since it was written.
             </p>
           </div>
         </div>
