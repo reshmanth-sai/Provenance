@@ -1,7 +1,7 @@
 import { IssuerConnector } from "./types.js";
 import { courseraConnector } from "./coursera.js";
-import { extractVerificationCodes } from "./code-extractor.js";
-import { executeIssuerLookup } from "./executor.js";
+import { extractCandidateCodes, CandidateCode } from "./code-extractor.js";
+import { executeIssuerLookup, RequestBudget } from "./executor.js";
 import { DocumentAnalysisSignal } from "../analysis-pipeline.js";
 
 // Static registry of supported issuer verification connectors
@@ -32,6 +32,7 @@ export function findConnector(claimedIssuerName: string | null | undefined): Iss
 
 /**
  * High-level entrypoint to execute issuer verification lookups for a document.
+ * Manages request budget (max 8 outbound requests total) and candidate prioritization.
  */
 export async function runIssuerLookup(params: {
   claimedIssuerName?: string | null;
@@ -47,8 +48,8 @@ export async function runIssuerLookup(params: {
     return null;
   }
 
-  // Extract qualifying alphanumeric tokens matching connector's code pattern
-  const candidateCodes = extractVerificationCodes(connector.codePattern, {
+  // Extract prioritized candidate codes (candidate-entered first, then OCR exact, then OCR reconstructed)
+  const candidateCodes: CandidateCode[] = extractCandidateCodes(connector.codePattern, {
     certificateNumber,
     extractedText,
   });
@@ -57,16 +58,48 @@ export async function runIssuerLookup(params: {
     return null;
   }
 
-  // Execute lookup on highest-priority code
-  const primaryCode = candidateCodes[0];
-  const result = await executeIssuerLookup({
-    connector,
-    code: primaryCode,
-    candidateName,
-    documentId,
-  });
+  // Global request budget per document upload
+  const budget: RequestBudget = {
+    outboundRequestCount: 0,
+    maxOutboundRequests: 8,
+  };
 
-  return result.signal || null;
+  let fallbackSignal: DocumentAnalysisSignal | null = null;
+
+  for (const cand of candidateCodes) {
+    const result = await executeIssuerLookup({
+      connector,
+      code: cand.code,
+      codeSource: cand.codeSource,
+      candidateName,
+      documentId,
+      budget,
+    });
+
+    // 1. Decisive matches (name_match or name_mismatch) immediately terminate search
+    if (result.outcome === "name_match" || result.outcome === "name_mismatch") {
+      return result.signal || null;
+    }
+
+    // 2. Candidate-entered code returning explicit null terminates search (authoritative)
+    if (result.outcome === "code_not_found" && cand.codeSource === "candidate_entered") {
+      return result.signal || null;
+    }
+
+    // 3. For OCR exact returning not-found, remember signal as fallback but continue search on reconstructed variants
+    if (result.outcome === "code_not_found" && cand.codeSource === "ocr_exact" && !fallbackSignal) {
+      fallbackSignal = result.signal || null;
+    } else if (!fallbackSignal && result.signal) {
+      fallbackSignal = result.signal || null;
+    }
+
+    // If budget limit reached, stop trying further variants
+    if (budget.outboundRequestCount >= budget.maxOutboundRequests) {
+      break;
+    }
+  }
+
+  return fallbackSignal;
 }
 
 export * from "./types.js";

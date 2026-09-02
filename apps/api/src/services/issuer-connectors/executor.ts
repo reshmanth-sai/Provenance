@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { prisma } from "@provenance/db";
-import { IssuerConnector, ConnectorLookupResult, ConnectorLookupOutcome } from "./types.js";
+import { IssuerConnector, ConnectorLookupResult, ConnectorLookupOutcome, CodeSource } from "./types.js";
 import { DocumentAnalysisSignal } from "../analysis-pipeline.js";
 
 /**
@@ -40,18 +40,26 @@ export function compareNames(parsedName: string, candidateName: string): boolean
   return allCandidateInParsed || allParsedInCandidate;
 }
 
+export interface RequestBudget {
+  outboundRequestCount: number;
+  maxOutboundRequests: number;
+}
+
 /**
  * Executes an anti-SSRF issuer lookup against a connector's public verification page.
  * Implements strict same-host redirect validation (max 2 hops), exact host constant assertion,
- * 5s timeout, 512KB body cap, and safe logging.
+ * request budget tracking (max 8 requests across all candidates per upload), 5s timeout,
+ * 512KB body cap, and safe logging.
  */
 export async function executeIssuerLookup(params: {
   connector: IssuerConnector;
   code: string;
   candidateName: string;
+  codeSource?: CodeSource;
   documentId?: string;
+  budget?: RequestBudget;
 }): Promise<ConnectorLookupResult> {
-  const { connector, code, candidateName, documentId } = params;
+  const { connector, code, candidateName, codeSource = "candidate_entered", documentId, budget } = params;
 
   // Control 1: Global kill switch
   if (process.env.ISSUER_LOOKUP_ENABLED === "false") {
@@ -60,6 +68,7 @@ export async function executeIssuerLookup(params: {
       outcome: "unavailable",
       httpStatus: null,
       rawNameHash: null,
+      codeSource,
     };
   }
 
@@ -70,6 +79,7 @@ export async function executeIssuerLookup(params: {
       outcome: "unavailable",
       httpStatus: null,
       rawNameHash: null,
+      codeSource,
     };
   }
 
@@ -94,6 +104,7 @@ export async function executeIssuerLookup(params: {
               documentId,
               connectorId: connector.id,
               code,
+              codeSource: cached.codeSource || codeSource,
               outcome: cached.outcome,
               httpStatus: cached.httpStatus,
               rawNameHash: cached.rawNameHash,
@@ -107,11 +118,24 @@ export async function executeIssuerLookup(params: {
         outcome: cached.outcome as ConnectorLookupOutcome,
         httpStatus: cached.httpStatus,
         rawNameHash: cached.rawNameHash,
-        signal: buildSignal(cached.outcome as ConnectorLookupOutcome, connector, code),
+        codeSource: (cached.codeSource as CodeSource) || codeSource,
+        signal: buildSignal(cached.outcome as ConnectorLookupOutcome, connector, code, (cached.codeSource as CodeSource) || codeSource),
       };
     }
   } catch (dbErr) {
     console.warn("[ISSUER-LOOKUP] Cache lookup error:", dbErr);
+  }
+
+  // Budget Enforcement: Check if outbound request budget is exhausted
+  if (budget && budget.outboundRequestCount >= budget.maxOutboundRequests) {
+    console.warn(`[ISSUER-LOOKUP] Outbound request budget exhausted (${budget.outboundRequestCount}/${budget.maxOutboundRequests}). Skipping network request for '${code}'`);
+    return {
+      outcome: "unavailable",
+      httpStatus: null,
+      rawNameHash: null,
+      codeSource,
+      signal: buildSignal("unavailable", connector, code, codeSource),
+    };
   }
 
   let finalOutcome: ConnectorLookupOutcome = "unavailable";
@@ -123,6 +147,12 @@ export async function executeIssuerLookup(params: {
   const templatesToTry = connector.pathTemplates.slice(0, 3);
 
   for (const template of templatesToTry) {
+    // Check budget before attempting next template
+    if (budget && budget.outboundRequestCount >= budget.maxOutboundRequests) {
+      console.warn(`[ISSUER-LOOKUP] Outbound request budget limit reached (${budget.outboundRequestCount}/${budget.maxOutboundRequests})`);
+      break;
+    }
+
     const encodedCode = encodeURIComponent(code);
     const initialPath = template.replace("{code}", encodedCode);
     let currentUrl = new URL(`https://${connector.host}${initialPath}`);
@@ -137,6 +167,13 @@ export async function executeIssuerLookup(params: {
         break;
       }
 
+      // Check budget before dispatching HTTP request
+      if (budget && budget.outboundRequestCount >= budget.maxOutboundRequests) {
+        console.warn(`[ISSUER-LOOKUP] Outbound request budget limit reached before hop ${redirectHops + 1}`);
+        finalOutcome = "unavailable";
+        break;
+      }
+
       // Control 6: 5-second timeout via AbortController
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -144,6 +181,10 @@ export async function executeIssuerLookup(params: {
 
       let response: Response;
       try {
+        if (budget) {
+          budget.outboundRequestCount++;
+        }
+
         // Control 7: manual redirect policy (re-asserting host check on each hop)
         response = await fetch(currentUrl.toString(), {
           method: "GET",
@@ -165,8 +206,8 @@ export async function executeIssuerLookup(params: {
       const durationMs = Date.now() - startTime;
       lastHttpStatus = response.status;
 
-      // Control 8: Safe request logging (never log response bodies)
-      console.log(`[ISSUER-LOOKUP] ${new Date().toISOString()} | Host: ${connector.host} | Path: ${currentUrl.pathname} | Status: ${response.status} | Duration: ${durationMs}ms | Hop: ${redirectHops + 1}`);
+      // Control 8: Safe request logging (never log response bodies or private identifiers)
+      console.log(`[ISSUER-LOOKUP] ${new Date().toISOString()} | Host: ${connector.host} | Path: ${currentUrl.pathname} | Code: ${code} (${codeSource}) | Status: ${response.status} | Duration: ${durationMs}ms | Hop: ${redirectHops + 1} | Budget: ${budget ? `${budget.outboundRequestCount}/${budget.maxOutboundRequests}` : 'N/A'}`);
 
       // Handle Redirect (3xx) — Follow ONLY if same-host and under hop limit
       if (response.status >= 300 && response.status < 400) {
@@ -177,7 +218,6 @@ export async function executeIssuerLookup(params: {
         }
 
         const nextUrl = new URL(locationHeader, currentUrl);
-        console.log(`[ISSUER-LOOKUP] Evaluating redirect destination: ${nextUrl.toString()}`);
 
         // Re-assert exact host equality and https
         if (nextUrl.host !== connector.host || nextUrl.protocol !== "https:") {
@@ -234,7 +274,12 @@ export async function executeIssuerLookup(params: {
     }
   }
 
-  // Persist IssuerLookup record if documentId is provided
+  // Safety Core: If code was reconstructed, a not-found or absent result proves nothing -> degrade to unavailable
+  if (codeSource === "ocr_reconstructed" && finalOutcome === "code_not_found") {
+    finalOutcome = "unavailable";
+  }
+
+  // Persist IssuerLookup record individually in 24-hour cache
   if (documentId) {
     try {
       await prisma.issuerLookup.create({
@@ -242,6 +287,7 @@ export async function executeIssuerLookup(params: {
           documentId,
           connectorId: connector.id,
           code,
+          codeSource,
           outcome: finalOutcome,
           httpStatus: lastHttpStatus,
           rawNameHash,
@@ -256,27 +302,32 @@ export async function executeIssuerLookup(params: {
     outcome: finalOutcome,
     httpStatus: lastHttpStatus,
     rawNameHash,
+    codeSource,
     matchedTemplate,
-    signal: buildSignal(finalOutcome, connector, code),
+    signal: buildSignal(finalOutcome, connector, code, codeSource),
   };
 }
 
 /**
- * Builds the labeled DocumentAnalysisSignal based on lookup outcome.
+ * Builds the labeled DocumentAnalysisSignal based on lookup outcome and code source provenance.
  */
 export function buildSignal(
   outcome: ConnectorLookupOutcome,
   connector: IssuerConnector,
-  code: string
+  code: string,
+  codeSource: CodeSource = "candidate_entered"
 ): DocumentAnalysisSignal | undefined {
   switch (outcome) {
     case "name_match":
       return {
         signalType: "issuer_lookup_name_match",
         signalValue: {
-          fact: `Public verification page published by ${connector.displayName} for code ${code} confirms matching candidate name`,
+          fact: `Public verification page published by ${connector.displayName} for ${codeSource === "ocr_reconstructed" ? "reconstructed " : ""}code ${code} confirms matching candidate name`,
           disclaimer:
-            "This confirms only that a public verification page published by the issuer lists this name for this code. It is not the same as the issuing institution confirming this credential through Provenance, and does not alter the credential's verification status.",
+            codeSource === "ocr_reconstructed"
+              ? "The credential code was reconstructed from imperfect text extraction and may resolve to a different person's credential. This does not alter verification status."
+              : "This confirms only that a public verification page published by the issuer lists this name for this code. It is not the same as the issuing institution confirming this credential through Provenance, and does not alter the credential's verification status.",
+          codeSource,
         },
         severity: "low_concern",
       };
@@ -285,20 +336,41 @@ export function buildSignal(
       return {
         signalType: "issuer_lookup_name_mismatch",
         signalValue: {
-          fact: `The public verification page published by ${connector.displayName} for code ${code} lists a different name than the one on the submitted document`,
+          fact:
+            codeSource === "ocr_reconstructed"
+              ? `The public verification page published by ${connector.displayName} for reconstructed code ${code} lists a different name than the one on the submitted document`
+              : `The public verification page published by ${connector.displayName} for code ${code} lists a different name than the one on the submitted document`,
           disclaimer:
-            "Legal name changes, transliteration, and differing name order can cause legitimate mismatches on public verification registries.",
+            codeSource === "ocr_reconstructed"
+              ? "The credential code was reconstructed from imperfect text extraction and may resolve to a different person's credential. Legal name changes, transliteration, and differing name order can also cause mismatches."
+              : "Legal name changes, transliteration, and differing name order can cause legitimate mismatches on public verification registries.",
+          codeSource,
         },
         severity: "review_recommended",
       };
 
     case "code_not_found":
+      // Reconstructed codes are never allowed to raise code_not_found
+      if (codeSource === "ocr_reconstructed") {
+        return {
+          signalType: "issuer_lookup_unavailable",
+          signalValue: {
+            fact: `Public verification lookup for ${connector.displayName} could not be completed at this time`,
+            disclaimer:
+              "Network timeouts, third-party page layout updates, or rate limits can prevent public verification lookups from completing.",
+            codeSource,
+          },
+          severity: "inconclusive",
+        };
+      }
+
       return {
         signalType: "issuer_lookup_code_not_found",
         signalValue: {
           fact: `Credential code ${code} was not found on the public verification registry for ${connector.displayName}`,
           disclaimer:
             "Expired, withdrawn, or regionally restricted credential pages can return not-found for legitimately issued credentials.",
+          codeSource,
         },
         severity: "review_recommended",
       };
@@ -310,6 +382,7 @@ export function buildSignal(
           fact: `Public verification lookup for ${connector.displayName} could not be completed at this time`,
           disclaimer:
             "Network timeouts, third-party page layout updates, or rate limits can prevent public verification lookups from completing.",
+          codeSource,
         },
         severity: "inconclusive",
       };

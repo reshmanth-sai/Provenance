@@ -97,6 +97,7 @@ model IssuerLookup {
   document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
   connectorId String
   code        String
+  codeSource  String?  // candidate_entered | ocr_exact | ocr_reconstructed
   outcome     String   // name_match | name_mismatch | code_not_found | unavailable
   httpStatus  Int?
   rawNameHash String?  // SHA-256 hash of normalized parsed name (never plaintext)
