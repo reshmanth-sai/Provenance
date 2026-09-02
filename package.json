@@ -13,6 +13,7 @@
     "db:generate": "npm --workspace=@provenance/db run generate",
     "db:seed": "npm --workspace=@provenance/db run seed",
     "issuer:create": "npx tsx packages/db/src/create-issuer.ts",
+    "admin:create": "npx tsx packages/db/src/create-admin.ts",
     "build": "npm run build --workspaces"
   }
 }
