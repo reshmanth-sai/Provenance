@@ -12,6 +12,7 @@
     "db:migrate": "npm --workspace=@provenance/db run migrate --",
     "db:generate": "npm --workspace=@provenance/db run generate",
     "db:seed": "npm --workspace=@provenance/db run seed",
+    "issuer:create": "npx tsx packages/db/src/create-issuer.ts",
     "build": "npm run build --workspaces"
   }
 }
