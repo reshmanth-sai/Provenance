@@ -56,6 +56,15 @@ export default function RegisterPage() {
         <p className="text-xs text-gray-500">Publish your verifiable portfolio with cryptographic attestation</p>
       </div>
 
+      <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl text-center">
+        <p className="text-xs text-blue-900">
+          Educational institution or certifying body?{" "}
+          <Link href="/register/institution" className="font-bold text-accent hover:underline inline-flex items-center gap-1">
+            <span>Register Institution →</span>
+          </Link>
+        </p>
+      </div>
+
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs text-red-700">
           <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />

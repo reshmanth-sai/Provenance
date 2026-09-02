@@ -56,6 +56,105 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+// POST /auth/register-institution
+router.post("/register-institution", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { institutionName, domain, email, password } = req.body;
+
+    if (!institutionName || typeof institutionName !== "string" || !institutionName.trim()) {
+      res.status(400).json({ error: "Institution name is required" });
+      return;
+    }
+
+    if (!domain || typeof domain !== "string" || !domain.trim()) {
+      res.status(400).json({ error: "Institutional domain is required (e.g. harvard.edu)" });
+      return;
+    }
+
+    if (!email || typeof email !== "string" || !email.includes("@")) {
+      res.status(400).json({ error: "A valid staff email address is required" });
+      return;
+    }
+
+    if (!password || typeof password !== "string" || password.length < 6) {
+      res.status(400).json({ error: "Password must be at least 6 characters" });
+      return;
+    }
+
+    const cleanDomain = domain.toLowerCase().trim();
+    const cleanEmail = email.toLowerCase().trim();
+
+    // Check if domain is already registered
+    const existingDomain = await prisma.issuer.findUnique({
+      where: { domain: cleanDomain },
+    });
+    if (existingDomain) {
+      res.status(409).json({ error: "An institution with this domain is already registered" });
+      return;
+    }
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+    if (existingUser) {
+      res.status(409).json({ error: "An account with this staff email already exists" });
+      return;
+    }
+
+    const passwordHash = await hashPassword(password);
+
+    // Create Issuer in pending status and Staff user
+    const [issuer, user] = await prisma.$transaction(async (tx) => {
+      const newIssuer = await tx.issuer.create({
+        data: {
+          name: institutionName.trim(),
+          domain: cleanDomain,
+          status: "pending",
+        },
+      });
+
+      const newUser = await tx.user.create({
+        data: {
+          email: cleanEmail,
+          passwordHash,
+          role: "issuer_staff",
+        },
+      });
+
+      const linkId = `${newIssuer.id}-${newUser.id}`.slice(0, 36);
+      await tx.issuerUser.create({
+        data: {
+          id: linkId,
+          issuerId: newIssuer.id,
+          userId: newUser.id,
+          role: "staff",
+        },
+      });
+
+      return [newIssuer, newUser];
+    });
+
+    res.status(201).json({
+      message: "Institution application submitted successfully. Awaiting platform administrator verification.",
+      issuer: {
+        id: issuer.id,
+        name: issuer.name,
+        domain: issuer.domain,
+        status: issuer.status,
+      },
+      staffUser: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Institution registration error:", error);
+    res.status(500).json({ error: "Internal server error during institution registration" });
+  }
+});
+
 // POST /auth/login
 router.post("/login", async (req: Request, res: Response): Promise<void> => {
   try {
