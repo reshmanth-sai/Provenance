@@ -14,6 +14,7 @@
     "db:seed": "npm --workspace=@provenance/db run seed",
     "issuer:create": "npx tsx packages/db/src/create-issuer.ts",
     "admin:create": "npx tsx packages/db/src/create-admin.ts",
+    "pdf:generate": "npx tsx scripts/generate-degree.ts",
     "build": "npm run build --workspaces",
     "db:backup": "bash scripts/db-backup.sh",
     "typecheck": "npm run typecheck --workspaces --if-present",
