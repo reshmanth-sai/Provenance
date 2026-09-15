@@ -45,3 +45,10 @@ backups/
 # Build artifacts from 'npm run gate'
 *.tsbuildinfo
 apps/web/next.log
+
+# Temporary Office lock files
+~$*
+
+# Local tool state
+.ijfw/
+**/.ijfw/

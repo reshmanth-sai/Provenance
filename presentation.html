@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Provenance — Tamper-Evident Credential-Verification Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent: #1E5F74;
+      --accent-hover: #154756;
+      --accent-light: #EAF3F6;
+      --primary: #1A1A1A;
+      --surface: #F8FAFC;
+      --surface-card: #FFFFFF;
+      --border: #E2E8F0;
+      --text-muted: #64748B;
+      --emerald: #059669;
+      --emerald-light: #ECFDF5;
+      --amber: #D97706;
+      --amber-light: #FEF3C7;
+      --crimson: #DC2626;
+      --crimson-light: #FEE2E2;
+      --blue: #2563EB;
+      --dark-bg: #0F172A;
+      --dark-surface: #1E293B;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: #0B0F19;
+      color: #0F172A;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* Top Controls Bar */
+    .top-bar {
+      height: 48px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      color: #94A3B8;
+      font-size: 13px;
+      z-index: 100;
+    }
+
+    .brand-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .brand-pill svg {
+      color: #38BDF8;
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-nav {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #F8FAFC;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-nav:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .slide-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #94A3B8;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    /* Main Slide Stage */
+    .stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+    }
+
+    .slide-wrapper {
+      width: 100%;
+      max-width: 1280px;
+      aspect-ratio: 16 / 9;
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.985); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Dark Slide Styling */
+    .slide-wrapper.dark {
+      background: var(--dark-bg);
+      color: #FFFFFF;
+    }
+
+    .slide-header {
+      padding: 32px 40px 16px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .category-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: var(--accent-light);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      width: fit-content;
+      border: 1px solid rgba(30, 95, 116, 0.2);
+    }
+
+    .dark .category-badge {
+      background: rgba(30, 95, 116, 0.3);
+      color: #38BDF8;
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    .slide-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.5px;
+    }
+
+    .dark .slide-title {
+      color: #FFFFFF;
+    }
+
+    .slide-subtitle {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .dark .slide-subtitle {
+      color: #94A3B8;
+    }
+
+    .slide-content {
+      flex: 1;
+      padding: 10px 40px 32px 40px;
+      display: flex;
+      gap: 20px;
+      overflow: hidden;
+    }
+
+    /* Card System */
+    .card {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dark .card {
+      background: var(--dark-surface);
+      border-color: #334155;
+    }
+
+    .card.accent-strip-left::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--accent);
+    }
+
+    .card.emerald-strip-left::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--emerald);
+    }
+
+    .card.amber-strip-left::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--amber);
+    }
+
+    .card.crimson-strip-left::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--crimson);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .dark .card-title {
+      color: #FFFFFF;
+    }
+
+    .card-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .dark .card-text {
+      color: #CBD5E1;
+    }
+
+    /* Grid Layouts */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; width: 100%; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; width: 100%; }
+    .grid-6 { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 14px; width: 100%; }
+
+    /* Screenshot Container */
+    .screenshot-frame {
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #FFFFFF;
+    }
+
+    .screenshot-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Footer Line */
+    .slide-footer {
+      height: 36px;
+      border-top: 1px solid var(--border);
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .dark .slide-footer {
+      border-color: #1E293B;
+      color: #64748B;
+    }
+
+    /* Speaker Notes Drawer */
+    .notes-drawer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 16px 24px;
+      color: #E2E8F0;
+      font-size: 13px;
+      line-height: 1.6;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 200;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .notes-drawer.open {
+      transform: translateY(0);
+    }
+
+    .notes-header {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #38BDF8;
+      margin-bottom: 6px;
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="brand-pill">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+      <span>Provenance Deck</span>
+    </div>
+
+    <div class="nav-controls">
+      <button class="btn-nav" onclick="prevSlide()">◀ Prev (←)</button>
+      <span class="slide-counter" id="slideNum">1 / 15</span>
+      <button class="btn-nav" onclick="nextSlide()">Next (→) ▶</button>
+      <button class="btn-nav" onclick="toggleNotes()">📝 Notes (N)</button>
+      <button class="btn-nav" onclick="toggleFullScreen()">⛶ Fullscreen (F)</button>
+    </div>
+  </div>
+
+  <!-- Main Slide Stage -->
+  <div class="stage">
+    <div class="progress-bar" id="progressBar"></div>
+    <div id="slideHost" style="width: 100%; display: flex; justify-content: center;"></div>
+  </div>
+
+  <!-- Speaker Notes Drawer -->
+  <div class="notes-drawer" id="notesDrawer">
+    <div class="notes-header">🎙 Speaker Notes (Press 'N' to toggle)</div>
+    <div id="notesText"></div>
+  </div>
+
+  <script>
+    const slides = [
+      // Slide 1: Cover
+      {
+        dark: true,
+        category: "Tamper-Evident Credential Records",
+        title: "PROVENANCE",
+        subtitle: "Verifiable Academic & Professional Credentials with Zero Doubt",
+        notes: "Welcome to the Provenance platform presentation. Provenance is a high-assurance, tamper-evident credential verification platform designed to eliminate academic and professional credential fraud. In this deck, we will explore the crisis in credential integrity, the 6-stage forensics pipeline, the cryptographic hash ledger, architectural anti-SSRF protections, and the multi-role user experience.",
+        content: `
+          <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; width: 100%;">
+            <div style="margin-top: 10px;">
+              <p style="font-size: 18px; color: #94A3B8; max-width: 800px; line-height: 1.6;">
+                Provenance pairs deterministic self-upload document forensics with an append-only, per-issuer cryptographic hash chain. Confirmed credentials cannot be altered or silently deleted without detection.
+              </p>
+            </div>
+            <div class="grid-4" style="margin-top: 24px;">
+              <div class="card dark" style="border-top: 3px solid #1E5F74;">
+                <div class="card-title" style="color: #38BDF8;">Deterministic Forensics</div>
+                <div class="card-text">6-stage file inspection analyzing metadata gaps, tool signatures, OCR, and pHash templates.</div>
+              </div>
+              <div class="card dark" style="border-top: 3px solid #059669;">
+                <div class="card-title" style="color: #34D399;">Per-Issuer Hash Chain</div>
+                <div class="card-text">Append-only SHA-256 cryptographic ledger with PostgreSQL advisory locks guaranteeing immutability.</div>
+              </div>
+              <div class="card dark" style="border-top: 3px solid #2563EB;">
+                <div class="card-title" style="color: #60A5FA;">Anti-SSRF Connectors</div>
+                <div class="card-text">Strict constant-host public registry lookups (Coursera) with zero arbitrary OCR link crawling.</div>
+              </div>
+              <div class="card dark" style="border-top: 3px solid #D97706;">
+                <div class="card-title" style="color: #FBBF24;">Zero Data Leakage</div>
+                <div class="card-text">Public verifiers surface verified signals while strictly protecting sensitive candidate PII.</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 2: Vision & Mission
+      {
+        dark: false,
+        category: "Platform Vision & Value Proposition",
+        title: "Restoring Absolute Trust in Academic & Professional Records",
+        subtitle: "Provenance eliminates the friction, insecurity, and ambiguity of modern background checks.",
+        notes: "Slide 2 establishes the core mission of Provenance. We introduce three revolutionary tenets: 'Signals, Not Verdicts' providing clear factual evidence, immutable per-issuer ledgers where every change is mathematically chained, and clear separation of trust states so recruiters distinguish self-submitted resumes from institutionally certified diplomas.",
+        content: `
+          <div class="grid-2">
+            <div class="card accent-strip-left">
+              <div class="card-title" style="color: var(--accent); font-size: 16px;">The Provenance Trust Paradigm</div>
+              <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 4px;">
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">• Signals, Not Arbitrary Verdicts:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Rather than issuing a subjective 'pass/fail' AI probability, Provenance executes 6 deterministic forensic checks, presenting recruiters with hard, verifiable facts.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">• Immutable Per-Issuer Ledgers:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Confirmed diplomas are committed to an append-only SHA-256 hash chain with PostgreSQL transaction-level concurrency locking.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">• Clear Separation of Trust States:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Self-uploaded documents are explicitly labelled as self-submitted evidence. Only institutional attestations committed to the ledger attain verified status.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card emerald-strip-left">
+              <div class="card-title" style="color: var(--emerald); font-size: 16px;">Key System Impact & Value Drivers</div>
+              <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 4px;">
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">✔ 100% Tamper-Evident:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Cryptographic prevHash chaining makes retroactive record manipulation mathematically impossible without breaking the downstream chain.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">✔ &lt; 500ms Instant Verification:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Sub-second public verification via credential ID lookup or QR code scanning replaces 2-4 week registrar turnaround times.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">✔ Zero-Knowledge Anti-SSRF:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Outbound institution registry queries use hardcoded hosts, strict token regex, and SHA-256 hashed recipient identities to guarantee security and privacy.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 3: The Problem Space
+      {
+        dark: false,
+        category: "The Problem Space",
+        title: "The Growing Crisis in Credential Fraud & Legacy Verification",
+        subtitle: "Modern editing tools and vulnerable automated scrapers have broken the legacy trust model.",
+        notes: "Slide 3 outlines why existing verification approaches fail: PDF forgery has become accessible to everyone, manual verification takes weeks, black-box AI makes opaque accusations without proof, and naive QR scrapers create severe SSRF security vulnerabilities.",
+        content: `
+          <div class="grid-2" style="grid-template-rows: 1fr 1fr; gap: 16px;">
+            <div class="card crimson-strip-left">
+              <div class="card-title">Sophisticated PDF Forgery</div>
+              <div class="card-text">Consumer software (Canva, Photoshop, Acrobat Pro) allows malicious actors to alter recipient names, GPA, and graduation dates with pixel-level precision, leaving visual inspectors oblivious.</div>
+            </div>
+            <div class="card amber-strip-left">
+              <div class="card-title">2 to 4 Week Verification Lag</div>
+              <div class="card-text">Recruiters and hiring managers spend weeks waiting for registrar responses via phone calls, emails, and physical mail, resulting in lost candidates and inflated operational overhead.</div>
+            </div>
+            <div class="card accent-strip-left">
+              <div class="card-title">Black-Box AI False Positives</div>
+              <div class="card-text">Heuristic-based AI verification systems produce opaque 'fraud risk scores' without audit trails, leading to wrongful disqualifications and legal liability for enterprises.</div>
+            </div>
+            <div class="card crimson-strip-left">
+              <div class="card-title">Severe SSRF & Scraper Vulnerabilities</div>
+              <div class="card-text">Naive automated verification tools blindly follow URLs extracted from uploaded QR codes, opening corporate networks to Server-Side Request Forgery, DNS rebinding, and IP exfiltration.</div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 4: Full-Stack Architecture
+      {
+        dark: false,
+        category: "Full-Stack Architecture",
+        title: "End-to-End Modern Monorepo Architecture",
+        subtitle: "Clean separation of concerns built on TypeScript, Next.js 14, Express, PostgreSQL, and native forensic engines.",
+        notes: "Slide 4 showcases our monorepo architecture: Next.js App Router for frontend UI, Express TypeScript API for orchestration, system-level binaries (Poppler pdftoppm and Tesseract OCR) for analysis, and PostgreSQL with Prisma for the cryptographic ledger.",
+        content: `
+          <div class="grid-4">
+            <div class="card" style="border-top: 3px solid var(--accent);">
+              <div class="card-title" style="color: var(--accent);">1. Presentation Tier</div>
+              <strong style="font-size: 11px; color: var(--primary);">Next.js 14 App Router</strong>
+              <div class="card-text" style="font-size: 11.5px;">
+                • Tailwind CSS Responsive Theme<br>
+                • Lucide React Icons & Dynamic UI<br>
+                • Role-Based Nav (Candidate, Issuer, Admin)<br>
+                • Public Verifier & Portfolio Showcase<br>
+                • Client Auth Context & Session Management
+              </div>
+            </div>
+            <div class="card" style="border-top: 3px solid var(--blue);">
+              <div class="card-title" style="color: var(--blue);">2. API & Services Tier</div>
+              <strong style="font-size: 11px; color: var(--primary);">Express + TypeScript REST API</strong>
+              <div class="card-text" style="font-size: 11.5px;">
+                • Multer Storage Pipeline<br>
+                • JWT Auth & RBAC Middleware<br>
+                • Deterministic JSON Canonicalizer<br>
+                • Advisory Lock Orchestration<br>
+                • Safe Logger & Sanitized Outputs
+              </div>
+            </div>
+            <div class="card" style="border-top: 3px solid var(--amber);">
+              <div class="card-title" style="color: var(--amber);">3. Forensics & Native Engines</div>
+              <strong style="font-size: 11px; color: var(--primary);">System-Level Analysis</strong>
+              <div class="card-text" style="font-size: 11.5px;">
+                • Poppler (pdftoppm) Rasterization<br>
+                • Tesseract OCR Spatial Extraction<br>
+                • Sharp 64-bit Perceptual Hash (pHash)<br>
+                • C2PA Content Authenticity Parser<br>
+                • Anti-SSRF Constant-Host Connectors
+              </div>
+            </div>
+            <div class="card" style="border-top: 3px solid var(--emerald);">
+              <div class="card-title" style="color: var(--emerald);">4. Storage & Ledger Tier</div>
+              <strong style="font-size: 11px; color: var(--primary);">PostgreSQL 16 + Prisma</strong>
+              <div class="card-text" style="font-size: 11.5px;">
+                • Prisma Strongly Typed ORM<br>
+                • Append-Only CredentialEvent Chain<br>
+                • pg_advisory_xact_lock Concurrency<br>
+                • Indexed Lookup & Deduplication<br>
+                • System AuditLog Table
+              </div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 5: 6-Stage Forensics Pipeline
+      {
+        dark: false,
+        category: "Forensic Inspection Engine",
+        title: "The 6-Stage Deterministic Document Analysis Pipeline",
+        subtitle: "Every uploaded certificate undergoes deep automated inspection to extract objective structural evidence.",
+        notes: "Slide 5 details our 6-stage deterministic pipeline. In apps/api/src/services/analysis-pipeline.ts, we compute raw & canonical hashes, analyze metadata gaps, detect editing software, run OCR text & name matching, compute pHash layout templates, and extract C2PA provenance metadata.",
+        content: `
+          <div class="grid-6">
+            <div class="card accent-strip-left">
+              <div class="card-title"><span style="color: var(--accent);">01</span> Raw & Canonical Hashing</div>
+              <div class="card-text">Computes SHA-256 raw file hash for deduplication. Generates canonical hash of normalized title, issuer, recipient, and issue date.</div>
+            </div>
+            <div class="card accent-strip-left">
+              <div class="card-title"><span style="color: var(--blue);">02</span> PDF Metadata & Time Delta</div>
+              <div class="card-text">Parses low-level PDF /Producer, /Creator, /CreationDate, /ModDate. Flags anomalies where creation date postdates modification date.</div>
+            </div>
+            <div class="card accent-strip-left">
+              <div class="card-title"><span style="color: var(--amber);">03</span> Editing Tool Signatures</div>
+              <div class="card-text">Inspects metadata dictionaries for signatures of known editing software: Photoshop, Canva, Illustrator, GIMP, Acrobat Pro.</div>
+            </div>
+            <div class="card accent-strip-left">
+              <div class="card-title"><span style="color: var(--emerald);">04</span> OCR Text & Recipient Match</div>
+              <div class="card-text">Runs Tesseract OCR with character-folding ('0'/'O', '1'/'I'). Evaluates Levenshtein distance against claimed candidate name and title.</div>
+            </div>
+            <div class="card accent-strip-left">
+              <div class="card-title"><span style="color: var(--accent);">05</span> Perceptual Hash (pHash)</div>
+              <div class="card-text">Computes 64-bit DCT perceptual hash on rasterized pages. Compares Hamming distance against known issuer certificate templates.</div>
+            </div>
+            <div class="card accent-strip-left">
+              <div class="card-title"><span style="color: var(--blue);">06</span> C2PA Authenticity Manifest</div>
+              <div class="card-text">Scans binary for Coalition for Content Provenance and Authenticity (C2PA) metadata, extracting hardware/cryptographic signing trails.</div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 6: Candidate Experience
+      {
+        dark: false,
+        category: "Candidate Experience in Action",
+        title: "Live Document Ingestion & Transparent Signal Breakdown",
+        subtitle: "Candidates receive immediate factual feedback upon uploading credentials, with one-click attestation requests.",
+        notes: "Slide 6 shows the real candidate upload interface. The candidate uploads a diploma, views instant forensic signals (e.g. Low Concern, OCR confidence 92.4%), and can request formal university attestation with one click.",
+        content: `
+          <div class="grid-2">
+            <div class="screenshot-frame">
+              <img src="candidate_upload_success.png" alt="Candidate Upload Experience" />
+            </div>
+            <div class="card accent-strip-left">
+              <div class="card-title" style="color: var(--accent); font-size: 16px;">Key UI & Workflow Highlights</div>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">✦ Instant Forensic Diagnostic:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Displays overall status ('Low Concern' vs 'Review Recommended') along with OCR Confidence (e.g. 92.4%) and character count.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">✦ Transparent Signal Cards:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Each inspection metric shows the raw fact (e.g. 'Created by LaTeX, Producer: pdfTeX-1.40.24') and an explicit explanation.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">✦ One-Click University Attestation:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Candidates can link their upload directly to registered issuing universities (e.g. Stanford, MIT) to trigger formal institutional review.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">✦ Public Profile Integration:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Uploaded credentials appear immediately on the candidate's public profile (/u/[username]), accurately marked as self-submitted.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 7: Cryptographic Hash Chain
+      {
+        dark: false,
+        category: "Cryptographic Integrity Engine",
+        title: "The Per-Issuer Tamper-Evident Hash Chain",
+        subtitle: "An append-only cryptographic ledger providing mathematical proof of record immutability.",
+        notes: "Slide 7 explains the mathematical core of Provenance: per-issuer append-only hash chains. Recursive deterministic JSON serialization, SHA-256 prevHash linking, and PostgreSQL advisory locking guarantee that any database tampering breaks downstream verification immediately.",
+        content: `
+          <div class="grid-2">
+            <div class="card emerald-strip-left">
+              <div class="card-title" style="color: var(--emerald); font-size: 16px;">Append-Only Cryptographic Mechanics</div>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div>
+                  <strong style="color: var(--primary); font-size: 12.5px;">✔ Deterministic Canonicalization:</strong>
+                  <p class="card-text" style="margin-top: 2px;">All event payloads are recursively key-sorted and serialized into stable JSON strings before hashing, eliminating key-ordering discrepancies.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 12.5px;">✔ Cryptographic Event Linkage:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Every block contains SHA-256(canonicalData) as contentHash and references the previous block's contentHash as prevHash.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 12.5px;">✔ PostgreSQL Advisory Concurrency Lock:</strong>
+                  <p class="card-text" style="margin-top: 2px;"><code style="background:#E2E8F0; padding:2px 4px; border-radius:4px; font-family:'JetBrains Mono'">SELECT pg_advisory_xact_lock(hashtext(issuerId))</code> serializes concurrent writes per institution, preventing race conditions or chain forks.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 12.5px;">✔ Mathematical Auditability:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Any verifier can execute <code style="background:#E2E8F0; padding:2px 4px; border-radius:4px; font-family:'JetBrains Mono'">verifyChain(issuerId)</code>. Any row modification breaks the cryptographic sequence instantly.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card dark" style="font-family:'JetBrains Mono', monospace; font-size:11px; padding:18px; justify-content:center;">
+              <div style="color:#34D399; font-weight:700; font-size:13px; margin-bottom:12px;">Cryptographic Chain Data Structure</div>
+              <div style="background:#0F172A; padding:10px; border-radius:8px; border:1px solid #334155; margin-bottom:8px;">
+                <div style="color:#38BDF8; font-weight:600;">┌─── Genesis Event (issued) ───</div>
+                <div style="color:#94A3B8;">│ prevHash: null</div>
+                <div style="color:#94A3B8;">│ contentHash: 8a4f91e...e3b1</div>
+                <div style="color:#34D399;">└── Status: Valid Genesis</div>
+              </div>
+              <div style="background:#0F172A; padding:10px; border-radius:8px; border:1px solid #334155; margin-bottom:8px;">
+                <div style="color:#38BDF8; font-weight:600;">┌─── Verification Event (verified) ───</div>
+                <div style="color:#94A3B8;">│ prevHash: 8a4f91e...e3b1</div>
+                <div style="color:#94A3B8;">│ contentHash: d92c4a1...7f04</div>
+                <div style="color:#34D399;">└── Status: Linked & Verified</div>
+              </div>
+              <div style="background:#0F172A; padding:10px; border-radius:8px; border:1px solid #334155;">
+                <div style="color:#38BDF8; font-weight:600;">┌─── Attestation Event (verified) ───</div>
+                <div style="color:#94A3B8;">│ prevHash: d92c4a1...7f04</div>
+                <div style="color:#94A3B8;">│ contentHash: 3c1a89f...9b82</div>
+                <div style="color:#34D399;">└── Status: Chain Tip Locked</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 8: Institutional Issuer Portal
+      {
+        dark: false,
+        category: "Institutional Issuer Portal",
+        title: "University Review Queue & Batch Issuance",
+        subtitle: "Institutions review candidate requests, inspect forensic signals, and commit attestations to the ledger.",
+        notes: "Slide 8 showcases the Institutional Review Portal from the running application. Registrars inspect incoming requests, review extracted OCR text against their student information system, and commit approved credentials to the chain with a single click.",
+        content: `
+          <div class="grid-2">
+            <div class="screenshot-frame">
+              <img src="issuer_review_approved.png" alt="Issuer Review & Approval Portal" />
+            </div>
+            <div class="card accent-strip-left">
+              <div class="card-title" style="color: var(--accent); font-size: 16px;">Issuer Capabilities & Audit Trails</div>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">✔ Review Queue Workflow:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Centralized queue displaying incoming student attestation requests with extracted metadata, claimed credentials, and timestamps.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">✔ Side-by-Side Forensic Review:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Inspect PDF document preview, OCR text extracted by Tesseract, and metadata analysis signals side-by-side with student records.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">✔ One-Click Chain Commitment:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Approving a request atomically creates a 'verified' CredentialEvent on the issuer's hash chain, immediately upgrading the credential status.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 13px;">✔ Institutional Roster & Revocation:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Searchable roster of all active credentials with instant revocation capabilities if academic misconduct or administrative error occurs.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 9: Public Verifier & Portfolio
+      {
+        dark: false,
+        category: "Public Verification & Trust Showcase",
+        title: "Zero-Friction Recruiter Audit & Public Portfolios",
+        subtitle: "Instant QR and Credential ID lookup backed by privacy-preserving trust badges.",
+        notes: "Slide 9 covers the public verification experience at /verify/[id] and the candidate portfolio at /u/[username]. Recruiters can audit cryptographic proof in sub-seconds with zero login required, while candidates showcase verified credentials safely.",
+        content: `
+          <div class="grid-3">
+            <div class="card" style="border-top: 3px solid var(--accent);">
+              <div class="card-title" style="color: var(--accent);">1. Instant Public Verifier</div>
+              <strong style="font-size: 11px; color: var(--primary);">Accessible via /verify/[id]</strong>
+              <div class="card-text" style="font-size: 11.5px; margin-top: 6px;">
+                • <strong>QR Code Direct Scanning:</strong> Hiring managers scan physical/digital QR codes to open verification instantly.<br><br>
+                • <strong>No Login Required:</strong> Public recruiters can verify legitimacy without creating an account or paying fees.<br><br>
+                • <strong>Trust Status Badges:</strong> Verified (Green), Self-Submitted (Amber), Revoked (Red).<br><br>
+                • <strong>Proof Integrity Stamp:</strong> Displays cryptographic contentHash and issuing university verification date.
+              </div>
+            </div>
+            <div class="card" style="border-top: 3px solid var(--emerald);">
+              <div class="card-title" style="color: var(--emerald);">2. Candidate Public Portfolio</div>
+              <strong style="font-size: 11px; color: var(--primary);">Accessible via /u/[username]</strong>
+              <div class="card-text" style="font-size: 11.5px; margin-top: 6px;">
+                • <strong>Shareable Web Profile:</strong> Clean, professional link for LinkedIn, resumes, and portfolios.<br><br>
+                • <strong>Visual Distinction:</strong> Verified institutional diplomas are clearly differentiated from self-submitted uploads.<br><br>
+                • <strong>Direct Verification Links:</strong> Each credential card links directly to its underlying cryptographic audit proof.<br><br>
+                • <strong>Privacy Shield:</strong> Sensitive emails, raw file paths, and declined items are strictly omitted.
+              </div>
+            </div>
+            <div class="card" style="border-top: 3px solid var(--blue);">
+              <div class="card-title" style="color: var(--blue);">3. Privacy-Preserving Guardrails</div>
+              <strong style="font-size: 11px; color: var(--primary);">Zero Data Leakage Architecture</strong>
+              <div class="card-text" style="font-size: 11.5px; margin-top: 6px;">
+                • <strong>PII Isolation:</strong> Candidate contact info and internal storage keys are never exposed on public routes.<br><br>
+                • <strong>Safe Error Handling:</strong> Missing credentials return generic 404 without revealing private system existence.<br><br>
+                • <strong>Hashed Public Connectors:</strong> Issuer registry lookups store only SHA-256 name hashes (rawNameHash).<br><br>
+                • <strong>Revocation Honesty:</strong> Revoked credentials display explicit timestamp and reason without data deletion.
+              </div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 10: Anti-SSRF Safety
+      {
+        dark: false,
+        category: "Zero-Trust Security Discipline",
+        title: "Architectural Safety: Anti-SSRF Public Issuer Connectors",
+        subtitle: "Rigorous defense-in-depth controls preventing Server-Side Request Forgery and data exfiltration.",
+        notes: "Slide 10 details our Anti-SSRF architectural policy. Unlike vulnerable scrapers, Provenance never fetches arbitrary URLs from PDFs. We use constant hostnames, strict alphanumeric token whitelists, same-host redirect verification, 5-second timeouts, and 512KB payload limits.",
+        content: `
+          <div class="grid-2">
+            <div class="card crimson-strip-left">
+              <div class="card-title" style="color: var(--crimson);">Strictly Prohibited Practices (SSRF Vectors)</div>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div>
+                  <strong style="color: var(--primary); font-size: 12px;">✖ No Arbitrary URL Fetching:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Provenance never extracts a URL or QR code payload from uploaded documents to fetch it. Allowing document contents to dictate host, port, or path is textbook SSRF.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 12px;">✖ No Open Network Scrapers:</strong>
+                  <p class="card-text" style="margin-top: 2px;">OCR text is never used to determine outbound network destinations or dynamic HTTP endpoints.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 12px;">✖ No Plaintext Third-Party Storage:</strong>
+                  <p class="card-text" style="margin-top: 2px;">Extracted recipient names from public issuer verification pages are never stored in plaintext in any table or API response. Only a SHA-256 hash is persisted.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card emerald-strip-left">
+              <div class="card-title" style="color: var(--emerald);">Concrete Anti-SSRF Defense Controls</div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div>
+                  <strong style="color: var(--primary); font-size: 12px;">✔ Decoupled Host Registry:</strong>
+                  <p class="card-text">Connector selection is steered exclusively by candidate's self-declared institution name matched against a static alias registry.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 12px;">✔ Constant Destination Hosts:</strong>
+                  <p class="card-text">Destination host ('www.coursera.org') is a hardcoded module constant. Target URL host and 'https:' protocol are asserted before dispatch.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 12px;">✔ Strict Whitelist Regex:</strong>
+                  <p class="card-text">Tokens are validated against /^[A-Z0-9]{8,20}$/. Slashes, dots, and queries are rejected with zero network requests.</p>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 12px;">✔ Same-Host Redirect Policy:</strong>
+                  <p class="card-text">Redirects (max 2 hops) strictly assert targetUrl.host === connector.host and HTTPS at every hop. Any discrepancy aborts immediately.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 11: Multi-Role Workflows
+      {
+        dark: false,
+        category: "Role-Based Access Control & User Journeys",
+        title: "Multi-Role Ecosystem: Seamless Personas & Workflows",
+        subtitle: "Tailored experiences for Candidates, Issuer Staff, Recruiters, and Platform Administrators.",
+        notes: "Slide 11 highlights our comprehensive Role-Based Access Control architecture covering Candidates, Issuer Staff, Recruiters/Verifiers, and Platform Admins.",
+        content: `
+          <div class="grid-4">
+            <div class="card" style="border-top: 3px solid var(--accent);">
+              <div class="card-title" style="color: var(--accent);">Candidate</div>
+              <strong style="font-size: 11px; color: var(--primary);">Upload & Showcase</strong>
+              <div class="card-text" style="font-size: 11.5px; margin-top: 6px;">
+                • Upload diplomas & view instant forensic signal breakdown<br><br>
+                • Request attestation directly from issuing university<br><br>
+                • Curate public portfolio profile link for recruiters<br><br>
+                • Track resolution status in real-time dashboard
+              </div>
+            </div>
+            <div class="card" style="border-top: 3px solid var(--emerald);">
+              <div class="card-title" style="color: var(--emerald);">Issuer Staff</div>
+              <strong style="font-size: 11px; color: var(--primary);">Review & Issuance</strong>
+              <div class="card-text" style="font-size: 11.5px; margin-top: 6px;">
+                • Manage incoming student attestation request queue<br><br>
+                • Side-by-side OCR text & forensic inspection<br><br>
+                • Commit approved credentials to hash ledger<br><br>
+                • Institutional roster search & instant record revocation
+              </div>
+            </div>
+            <div class="card" style="border-top: 3px solid var(--blue);">
+              <div class="card-title" style="color: var(--blue);">Recruiter / Verifier</div>
+              <strong style="font-size: 11px; color: var(--primary);">Audit & Verification</strong>
+              <div class="card-text" style="font-size: 11.5px; margin-top: 6px;">
+                • Zero-friction ID lookup & QR scanning<br><br>
+                • Audit tamper-evident SHA-256 cryptographic proofs<br><br>
+                • Inspect objective forensic inspection signals<br><br>
+                • Confirm active vs revoked diploma status
+              </div>
+            </div>
+            <div class="card" style="border-top: 3px solid var(--amber);">
+              <div class="card-title" style="color: var(--amber);">Platform Admin</div>
+              <strong style="font-size: 11px; color: var(--primary);">Governance & Health</strong>
+              <div class="card-text" style="font-size: 11.5px; margin-top: 6px;">
+                • Approve & onboard issuing universities<br><br>
+                • Verify institution DNS domains and staff accounts<br><br>
+                • Inspect system-wide actor Audit Logs<br><br>
+                • Monitor system health & database backups
+              </div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 12: Database Schema
+      {
+        dark: false,
+        category: "Data Architecture & Prisma Schema",
+        title: "Relational Data Model & Cryptographic Entities",
+        subtitle: "Prisma schema designed for transactional consistency, auditability, and tamper-detection.",
+        notes: "Slide 12 reviews our database schema: Identity & Institutions (User, Profile, Issuer), Forensics & Analysis (Document, DocumentAnalysis, IssuerLookup), and Credentials & Hash Ledger (Credential, VerificationRequest, CredentialEvent, AuditLog).",
+        content: `
+          <div class="grid-3">
+            <div class="card" style="border-top: 3px solid var(--accent);">
+              <div class="card-title" style="color: var(--accent);">Identity & Institutions</div>
+              <strong style="font-size: 11px; color: var(--primary);">Core User & Issuer Models</strong>
+              <div class="card-text" style="font-size: 11.5px; margin-top: 6px;">
+                • <strong>User:</strong> id, email, passwordHash, role (candidate | issuer_staff | platform_admin)<br><br>
+                • <strong>CandidateProfile:</strong> userId, publicUsername, name, headline, bio, avatarUrl<br><br>
+                • <strong>Issuer:</strong> id, name, domain (unique), status (pending | approved | rejected), approvedBy<br><br>
+                • <strong>IssuerUser:</strong> id, issuerId, userId, role (staff | admin)
+              </div>
+            </div>
+            <div class="card" style="border-top: 3px solid var(--amber);">
+              <div class="card-title" style="color: var(--amber);">Forensics & Analysis</div>
+              <strong style="font-size: 11px; color: var(--primary);">Document & Inspection Models</strong>
+              <div class="card-text" style="font-size: 11.5px; margin-top: 6px;">
+                • <strong>Document:</strong> id, candidateId, storageKey, rawFileHash, canonicalContentHash, phash, ocrText, ocrConfidence, c2paPresent<br><br>
+                • <strong>DocumentAnalysis:</strong> id, documentId, signalType, signalValue (JSON), severity<br><br>
+                • <strong>IssuerLookup:</strong> id, documentId, connectorId, code, outcome, rawNameHash, checkedAt
+              </div>
+            </div>
+            <div class="card" style="border-top: 3px solid var(--emerald);">
+              <div class="card-title" style="color: var(--emerald);">Credentials & Hash Ledger</div>
+              <strong style="font-size: 11px; color: var(--primary);">Immutable Ledger Models</strong>
+              <div class="card-text" style="font-size: 11.5px; margin-top: 6px;">
+                • <strong>Credential:</strong> id, candidateId, issuerId, source, status, credentialType, title<br><br>
+                • <strong>VerificationRequest:</strong> id, credentialId, candidateId, issuerId, status, requestedAt, resolvedAt<br><br>
+                • <strong>CredentialEvent:</strong> id, credentialId, issuerId, eventType, canonicalData (JSON), contentHash, prevHash<br><br>
+                • <strong>AuditLog:</strong> id, actorId, action, targetType, targetId, metadata, createdAt
+              </div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 13: Security & Compliance
+      {
+        dark: false,
+        category: "Enterprise Security & Compliance",
+        title: "Defense-in-Depth Security & Privacy Architecture",
+        subtitle: "Engineered from the ground up for strict confidentiality, data minimization, and auditability.",
+        notes: "Slide 13 details our security controls: SHA-256 cryptographic hashing, JWT auth, bcrypt passwords, candidate PII isolation on public endpoints, and comprehensive audit logs.",
+        content: `
+          <div class="grid-2" style="grid-template-rows: 1fr 1fr; gap: 16px;">
+            <div class="card accent-strip-left">
+              <div class="card-title">Cryptographic Integrity</div>
+              <div class="card-text">SHA-256 content hashes, deterministic JSON canonicalization, and PostgreSQL transaction advisory locking prevent data corruption and tampering.</div>
+            </div>
+            <div class="card accent-strip-left">
+              <div class="card-title">Auth & Access Control</div>
+              <div class="card-text">Stateless JWT authentication, bcrypt (12 rounds) password hashing, and strict role-based route middleware protect all internal endpoints.</div>
+            </div>
+            <div class="card emerald-strip-left">
+              <div class="card-title">Zero PII Leakage</div>
+              <div class="card-text">Candidate emails, phone numbers, and physical storage paths are completely omitted from public API payloads and verifier views.</div>
+            </div>
+            <div class="card amber-strip-left">
+              <div class="card-title">Immutable Audit Logs</div>
+              <div class="card-text">Every platform action (login, upload, verification, approval, rejection, issuer creation) is immutably logged with actorId, timestamps, and metadata.</div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 14: Roadmap
+      {
+        dark: false,
+        category: "Product Roadmap & Strategic Horizon",
+        title: "Strategic Roadmap: The Future of Verifiable Credentials",
+        subtitle: "Expanding Provenance across decentralized identity, AI forgery detection, and global issuer networks.",
+        notes: "Slide 14 outlines our future product vision: W3C Verifiable Credentials and mobile wallet exports, deep learning GAN forgery detection, enterprise ATS/HRIS integrations (Workday, Greenhouse), and global issuer consortiums.",
+        content: `
+          <div class="grid-2" style="grid-template-rows: 1fr 1fr; gap: 16px;">
+            <div class="card accent-strip-left">
+              <div class="card-title">Phase 1: W3C Decentralized Identity (DIDs)</div>
+              <div class="card-text">Integration with W3C Verifiable Credentials (VC) standard, allowing candidates to export cryptographically signed credentials directly to Apple Wallet & Google Wallet.</div>
+            </div>
+            <div class="card accent-strip-left">
+              <div class="card-title">Phase 2: Deep Learning GAN Forgery Detection</div>
+              <div class="card-text">Advanced computer vision models detecting subtle generative AI visual inpainting, font boundary irregularities, and digital certificate stamp manipulations.</div>
+            </div>
+            <div class="card amber-strip-left">
+              <div class="card-title">Phase 3: Enterprise HRIS & ATS Integrations</div>
+              <div class="card-text">Direct API connectors and webhooks for Workday, Greenhouse, Lever, and SAP SuccessFactors for automated candidate verification upon job application.</div>
+            </div>
+            <div class="card emerald-strip-left">
+              <div class="card-title">Phase 4: Global Federated Issuer Consortium</div>
+              <div class="card-text">Decentralized consensus verification network connecting international universities, accreditation boards, and professional licensing bodies worldwide.</div>
+            </div>
+          </div>
+        `
+      },
+      // Slide 15: Conclusion
+      {
+        dark: true,
+        category: "The Future of Credential Trust",
+        title: "Proven Integrity. Zero Doubt. Instant Trust.",
+        subtitle: "Provenance bridges candidates, issuing institutions, and verifiers into an unforgeable trust ecosystem.",
+        notes: "Slide 15 concludes our presentation. Provenance is a production-ready platform combining forensic intelligence, cryptographic certainty, and intuitive user experiences. Getting started is easy with our clean monorepo setup.",
+        content: `
+          <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; width: 100%;">
+            <div class="grid-3" style="margin-top: 10px;">
+              <div class="card dark" style="border-top: 3px solid #1E5F74;">
+                <div class="card-title" style="color: #38BDF8; font-size: 15px;">Deterministic Forensics</div>
+                <div class="card-text" style="font-size: 12px; margin-top: 6px;">6-stage file analysis providing objective evidence rather than opaque probabilistic guesses.</div>
+              </div>
+              <div class="card dark" style="border-top: 3px solid #059669;">
+                <div class="card-title" style="color: #34D399; font-size: 15px;">Tamper-Evident Ledger</div>
+                <div class="card-text" style="font-size: 12px; margin-top: 6px;">Append-only cryptographic hash chain guaranteeing mathematical record immutability.</div>
+              </div>
+              <div class="card dark" style="border-top: 3px solid #2563EB;">
+                <div class="card-title" style="color: #60A5FA; font-size: 15px;">Enterprise Architecture</div>
+                <div class="card-text" style="font-size: 12px; margin-top: 6px;">Next.js App Router, Express, PostgreSQL, Anti-SSRF connectors, and privacy-preserving APIs.</div>
+              </div>
+            </div>
+
+            <div class="card dark" style="border: 1px solid #1E5F74; background: #0F172A; margin-top: 16px; padding: 16px;">
+              <div style="font-weight: 700; color: #38BDF8; font-size: 13px; margin-bottom: 6px;">⚡ Quick Start in 3 Commands:</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #E2E8F0; line-height: 1.6;">
+                1. <code>npm install</code> &nbsp;•&nbsp; 2. <code>docker-compose up -d && npm run db:migrate</code> &nbsp;•&nbsp; 3. <code>npm run dev:api & npm run dev:web</code>
+              </div>
+            </div>
+          </div>
+        `
+      }
+    ];
+
+    let currentSlide = 0;
+    let notesOpen = false;
+
+    function renderSlide(index) {
+      const slide = slides[index];
+      const host = document.getElementById("slideHost");
+      
+      const isDark = slide.dark ? "dark" : "";
+      
+      host.innerHTML = `
+        <div class="slide-wrapper ${isDark}">
+          <div class="slide-header">
+            <div class="category-badge">✦ ${slide.category}</div>
+            <div class="slide-title">${slide.title}</div>
+            <div class="slide-subtitle">${slide.subtitle}</div>
+          </div>
+          <div class="slide-content">
+            ${slide.content}
+          </div>
+          <div class="slide-footer">
+            <span>PROVENANCE  |  Tamper-Evident Credential-Verification Platform</span>
+            <span>Slide ${index + 1} of ${slides.length}</span>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("slideNum").innerText = `${index + 1} / ${slides.length}`;
+      document.getElementById("notesText").innerText = slide.notes;
+      document.getElementById("progressBar").style.width = `${((index + 1) / slides.length) * 100}%`;
+    }
+
+    function nextSlide() {
+      if (currentSlide < slides.length - 1) {
+        currentSlide++;
+        renderSlide(currentSlide);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        renderSlide(currentSlide);
+      }
+    }
+
+    function toggleNotes() {
+      notesOpen = !notesOpen;
+      document.getElementById("notesDrawer").classList.toggle("open", notesOpen);
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Keyboard navigation
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
+        nextSlide();
+      } else if (e.key === "ArrowLeft" || e.key === "Backspace" || e.key === "PageUp") {
+        prevSlide();
+      } else if (e.key.toLowerCase() === "n") {
+        toggleNotes();
+      } else if (e.key.toLowerCase() === "f") {
+        toggleFullScreen();
+      }
+    });
+
+    // Initialize first slide
+    renderSlide(0);
+  </script>
+</body>
+</html>

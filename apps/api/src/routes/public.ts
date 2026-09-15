@@ -225,14 +225,18 @@ router.get("/verify/:credentialId/qr", async (req: Request, res: Response): Prom
       return;
     }
 
-    const host = `${req.protocol}://${req.get("host")}`;
+    const frontendHost =
+      process.env.FRONTEND_URL ||
+      process.env.PUBLIC_BASE_URL ||
+      process.env.CORS_ORIGIN ||
+      "http://localhost:3000";
 
     if (format === "svg") {
-      const svg = await generateQrSvg(credentialId, host);
+      const svg = await generateQrSvg(credentialId, frontendHost);
       res.setHeader("Content-Type", "image/svg+xml");
       res.status(200).send(svg);
     } else {
-      const pngBuffer = await generateQrPng(credentialId, host);
+      const pngBuffer = await generateQrPng(credentialId, frontendHost);
       res.setHeader("Content-Type", "image/png");
       res.status(200).send(pngBuffer);
     }
