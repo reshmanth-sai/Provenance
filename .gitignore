@@ -54,3 +54,6 @@ apps/web/next.log
 # Local tool state
 .ijfw/
 **/.ijfw/
+.vercel
+.env*
+.neon
