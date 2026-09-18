@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Building2, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, Clock } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+import { API_BASE } from "../../../lib/config";
 
 export default function IssuerRegisterPage() {
   const [institutionName, setInstitutionName] = useState("");

@@ -14,6 +14,7 @@ import {
   User as UserIcon,
   Search,
 } from "lucide-react";
+import { API_BASE } from "../../../lib/config";
 
 interface CandidateProfileData {
   candidate: {
@@ -52,8 +53,6 @@ interface CandidateProfileData {
     }>;
   };
 }
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export default function PublicProfilePage() {
   const params = useParams();

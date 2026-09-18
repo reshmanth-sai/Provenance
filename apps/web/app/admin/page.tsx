@@ -38,6 +38,11 @@ interface AdminStats {
     pending?: number;
     rejected?: number;
   };
+  security?: {
+    total: number;
+    alerts: number;
+    warnings: number;
+  };
 }
 
 export default function AdminDashboardPage() {
@@ -106,7 +111,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Category 1: Users */}
         <div className="p-6 bg-surface-card rounded-2xl border border-gray-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
@@ -205,6 +210,40 @@ export default function AdminDashboardPage() {
             className="text-xs font-semibold text-accent hover:underline flex items-center gap-1 pt-1"
           >
             <span>View Platform Audit Log</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {/* Category 4: Security Threat Intelligence */}
+        <div className="p-6 bg-surface-card rounded-2xl border border-gray-200 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className={`w-5 h-5 ${(stats?.security?.alerts || 0) > 0 ? "text-rose-600" : "text-emerald-600"}`} />
+              <h2 className="text-base font-bold text-primary">Threat Monitoring</h2>
+            </div>
+            <span className="text-xs text-gray-400 font-mono">Total: {stats?.security?.total || 0}</span>
+          </div>
+
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between p-2 rounded-lg bg-rose-50 border border-rose-200">
+              <span className="text-rose-900 font-semibold">Security Alerts:</span>
+              <span className="font-extrabold text-rose-700">{stats?.security?.alerts || 0}</span>
+            </div>
+            <div className="flex justify-between p-2 rounded-lg bg-amber-50 border border-amber-200">
+              <span className="text-amber-900 font-semibold">Warnings / Rate Limits:</span>
+              <span className="font-extrabold text-amber-700">{stats?.security?.warnings || 0}</span>
+            </div>
+            <div className="flex justify-between p-2 rounded-lg bg-surface border border-gray-100">
+              <span className="text-gray-600">Active Defense:</span>
+              <span className="font-bold text-emerald-600">Enforcing</span>
+            </div>
+          </div>
+
+          <Link
+            href="/admin/audit-log"
+            className="text-xs font-semibold text-accent hover:underline flex items-center gap-1 pt-1"
+          >
+            <span>Review Incidents</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>

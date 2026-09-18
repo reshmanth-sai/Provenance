@@ -171,11 +171,15 @@ model InstitutionInvite {
 
 model AuditLog {
   id         String   @id @default(uuid())
-  actorId    String
-  actor      User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
   action     String
   targetType String
   targetId   String?
+  severity   String   @default("info") // info | warning | security_alert
+  ipAddress  String?
   metadata   Json?
   createdAt  DateTime @default(now())
+
+  @@index([severity, createdAt])
 }

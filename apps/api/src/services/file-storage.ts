@@ -20,6 +20,36 @@ export interface ValidatedFile {
 }
 
 /**
+ * Resolves the root uploads directory based on STORAGE_DIR / UPLOADS_DIR env vars
+ * or by locating the project storage/uploads directory relative to process.cwd().
+ */
+export function getUploadsDir(): string {
+  if (process.env.STORAGE_DIR) {
+    return path.resolve(process.env.STORAGE_DIR);
+  }
+  if (process.env.UPLOADS_DIR) {
+    return path.resolve(process.env.UPLOADS_DIR);
+  }
+
+  const candidates = [
+    path.resolve(process.cwd(), "../../storage/uploads"),
+    path.resolve(process.cwd(), "storage/uploads"),
+    path.resolve(process.cwd(), "../storage/uploads"),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  if (process.cwd().endsWith("apps/api") || process.cwd().endsWith("apps/api/")) {
+    return path.resolve(process.cwd(), "../../storage/uploads");
+  }
+  return path.resolve(process.cwd(), "storage/uploads");
+}
+
+/**
  * Validates file buffer magic bytes against allowed MIME types.
  * Enforces strict byte-level verification rather than trusting extensions.
  */
@@ -49,7 +79,7 @@ export async function validateAndStoreFile(
   const extension = detectedType.ext;
   const storageKey = `${storageUuid}.${extension}`;
 
-  const uploadsDir = path.resolve(process.cwd(), "../../storage/uploads");
+  const uploadsDir = getUploadsDir();
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
@@ -68,15 +98,20 @@ export async function validateAndStoreFile(
 }
 
 export function getDocumentFilePath(storageKey: string): string {
-  const possiblePaths = [
+  const uploadsDir = getUploadsDir();
+  const directPath = path.join(uploadsDir, storageKey);
+  if (fs.existsSync(directPath)) {
+    return directPath;
+  }
+
+  const fallbackCandidates = [
     path.resolve(process.cwd(), "../../storage/uploads", storageKey),
     path.resolve(process.cwd(), "storage/uploads", storageKey),
     path.resolve(process.cwd(), "../storage/uploads", storageKey),
-    path.resolve("/Users/sai/Provenance/storage/uploads", storageKey),
   ];
-  for (const p of possiblePaths) {
+  for (const p of fallbackCandidates) {
     if (fs.existsSync(p)) return p;
   }
-  return path.resolve(process.cwd(), "../../storage/uploads", storageKey);
-}
 
+  return directPath;
+}

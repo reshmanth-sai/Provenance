@@ -45,6 +45,19 @@ router.put("/profile", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    if (avatarUrl && typeof avatarUrl === "string" && avatarUrl.trim().length > 0) {
+      try {
+        const parsed = new URL(avatarUrl.trim());
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          res.status(400).json({ error: "Avatar URL must use http or https protocol" });
+          return;
+        }
+      } catch {
+        res.status(400).json({ error: "Invalid Avatar URL format" });
+        return;
+      }
+    }
+
     // Check if publicUsername is taken by another candidate
     const existing = await prisma.candidateProfile.findUnique({
       where: { publicUsername: publicUsername.toLowerCase().trim() },

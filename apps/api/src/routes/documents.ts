@@ -5,6 +5,7 @@ import { prisma } from "@provenance/db";
 import { authenticateToken, requireRole } from "../middleware/auth.js";
 import { validateAndStoreFile } from "../services/file-storage.js";
 import { runDocumentAnalysisPipeline } from "../services/analysis-pipeline.js";
+import { recordSecurityEvent } from "../services/security-logger.js";
 
 const router = Router();
 const upload = multer({
@@ -12,13 +13,23 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 });
 
-// Dedicated rate limiter for expensive document analysis (20 uploads per 15 min per IP)
+// Dedicated rate limiter for expensive document analysis (20 uploads per 15 min per IP) with security event logging
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   message: { error: "Too many document uploads from this IP, please try again after 15 minutes." },
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res, _next, options) => {
+    recordSecurityEvent({
+      req,
+      action: "upload_rate_limit_exceeded",
+      severity: "warning",
+      targetType: "upload_endpoint",
+      metadata: { limit: options.max, windowMs: options.windowMs },
+    });
+    res.status(options.statusCode).json(options.message);
+  },
 });
 
 // Protect all document routes
@@ -71,6 +82,19 @@ router.post(
       try {
         validatedFile = await validateAndStoreFile(req.file.buffer, req.file.originalname);
       } catch (validationErr: any) {
+        recordSecurityEvent({
+          req,
+          action: "malicious_upload_rejected",
+          severity: "security_alert",
+          actorId: candidateId,
+          targetType: "document_upload",
+          metadata: {
+            filename: req.file.originalname,
+            size: req.file.size,
+            claimedIssuerName,
+            reason: validationErr.message,
+          },
+        });
         res.status(400).json({ error: validationErr.message || "Invalid file content" });
         return;
       }

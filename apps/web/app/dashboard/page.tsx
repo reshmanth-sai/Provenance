@@ -62,7 +62,7 @@ export default function CandidateDashboard() {
 
       // 2. Fetch Public Profile by username if available
       if (currentProfile?.publicUsername) {
-        const pubRes = await fetch(`http://localhost:4000/u/${currentProfile.publicUsername}`);
+        const pubRes = await apiFetch(`/u/${currentProfile.publicUsername}`);
         if (pubRes.ok) {
           const pubData = await pubRes.json();
           const all = [

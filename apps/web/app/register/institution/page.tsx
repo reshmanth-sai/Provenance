@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Building2, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+import { API_BASE } from "../../../lib/config";
 
 export default function RegisterInstitutionPage() {
   const router = useRouter();

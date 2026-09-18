@@ -1,4 +1,5 @@
 import fs from "fs";
+import crypto from "crypto";
 import { Router, Request, Response } from "express";
 import { prisma, hashPassword } from "@provenance/db";
 import {

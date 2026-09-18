@@ -4,6 +4,8 @@ import { prisma } from "@provenance/db";
 import { verifyChain } from "../services/hash-chain.js";
 import { generateQrPng, generateQrSvg } from "../services/qr-generator.js";
 
+import { recordSecurityEvent } from "../services/security-logger.js";
+
 const router = Router();
 
 // Rate limiter for verification endpoints (30 requests per minute per IP)
@@ -13,6 +15,16 @@ const verifyLimiter = rateLimit({
   message: { error: "Too many verification requests from this IP, please try again after a minute." },
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res, _next, options) => {
+    recordSecurityEvent({
+      req,
+      action: "verify_rate_limit_exceeded",
+      severity: "warning",
+      targetType: "public_verify",
+      metadata: { limit: options.max, windowMs: options.windowMs },
+    });
+    res.status(options.statusCode).json(options.message);
+  },
 });
 
 // Rate limiter for public profile endpoints (60 requests per minute per IP)
@@ -22,6 +34,35 @@ const profileLimiter = rateLimit({
   message: { error: "Too many profile requests from this IP, please try again after a minute." },
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res, _next, options) => {
+    recordSecurityEvent({
+      req,
+      action: "profile_rate_limit_exceeded",
+      severity: "warning",
+      targetType: "public_profile",
+      metadata: { limit: options.max, windowMs: options.windowMs },
+    });
+    res.status(options.statusCode).json(options.message);
+  },
+});
+
+// Rate limiter for CPU-intensive QR code generation (60 requests per 15 minutes per IP)
+const qrLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  message: { error: "Too many QR code requests from this IP, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res, _next, options) => {
+    recordSecurityEvent({
+      req,
+      action: "qr_rate_limit_exceeded",
+      severity: "warning",
+      targetType: "qr_generation",
+      metadata: { limit: options.max, windowMs: options.windowMs },
+    });
+    res.status(options.statusCode).json(options.message);
+  },
 });
 
 /**
@@ -211,7 +252,7 @@ router.get("/verify/:credentialId", verifyLimiter, async (req: Request, res: Res
  * GET /verify/:credentialId/qr
  * Returns a QR code (PNG or SVG) encoding the public verification URL.
  */
-router.get("/verify/:credentialId/qr", async (req: Request, res: Response): Promise<void> => {
+router.get("/verify/:credentialId/qr", qrLimiter, async (req: Request, res: Response): Promise<void> => {
   const { credentialId } = req.params;
   const { format } = req.query;
 

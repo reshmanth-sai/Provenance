@@ -1,9 +1,29 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, CookieOptions } from "express";
 import jwt from "jsonwebtoken";
 import { prisma, hashPassword, comparePassword } from "@provenance/db";
 import { authenticateToken, requireRole, JwtTokenPayload, JWT_SECRET, JWT_REFRESH_SECRET } from "../middleware/auth.js";
+import { recordSecurityEvent } from "../services/security-logger.js";
 
 const router = Router();
+
+function getRefreshTokenCookieOptions(maxAge?: number): CookieOptions {
+  const isProd = process.env.NODE_ENV === "production";
+  const sameSiteSetting = (process.env.COOKIE_SAME_SITE || (isProd ? "none" : "lax")) as "lax" | "strict" | "none";
+  const secureSetting = isProd || sameSiteSetting === "none";
+
+  const options: CookieOptions = {
+    httpOnly: true,
+    secure: secureSetting,
+    sameSite: sameSiteSetting,
+    path: "/",
+  };
+
+  if (maxAge !== undefined) {
+    options.maxAge = maxAge;
+  }
+
+  return options;
+}
 
 // POST /auth/register
 router.post("/register", async (req: Request, res: Response): Promise<void> => {
@@ -170,12 +190,27 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
     });
 
     if (!user) {
+      recordSecurityEvent({
+        req,
+        action: "login_failed_user_not_found",
+        severity: "warning",
+        targetType: "auth",
+        metadata: { email: email.toLowerCase().trim() },
+      });
       res.status(401).json({ error: "Invalid email or password" });
       return;
     }
 
     const isMatch = await comparePassword(password, user.passwordHash);
     if (!isMatch) {
+      recordSecurityEvent({
+        req,
+        action: "login_failed_bad_password",
+        severity: "warning",
+        targetType: "auth",
+        actorId: user.id,
+        metadata: { email: user.email },
+      });
       res.status(401).json({ error: "Invalid email or password" });
       return;
     }
@@ -193,12 +228,7 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
     // Issue 7-day JWT refresh token in httpOnly cookie
     const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: "7d" });
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    res.cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions(7 * 24 * 60 * 60 * 1000));
 
     res.status(200).json({
       accessToken,
@@ -269,11 +299,7 @@ router.post("/refresh", async (req: Request, res: Response): Promise<void> => {
 
 // POST /auth/logout
 router.post("/logout", (_req: Request, res: Response): void => {
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-  });
+  res.clearCookie("refreshToken", getRefreshTokenCookieOptions());
   res.status(200).json({ message: "Logged out successfully" });
 });
 

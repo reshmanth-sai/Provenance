@@ -16,6 +16,9 @@
     "admin:create": "npx tsx packages/db/src/create-admin.ts",
     "pdf:generate": "npx tsx scripts/generate-degree.ts",
     "build": "npm run build --workspaces",
+    "start:api": "npm run start --workspace=@provenance/api",
+    "start:web": "npm run start --workspace=@provenance/web",
+    "db:deploy": "npm --workspace=@provenance/db run migrate:deploy",
     "db:backup": "bash scripts/db-backup.sh",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "gate": "bash scripts/gate.sh"

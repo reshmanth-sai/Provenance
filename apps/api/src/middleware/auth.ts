@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma, Issuer } from "@provenance/db";
+import { recordSecurityEvent } from "../services/security-logger.js";
 
 export interface AuthUser {
   id: string;
@@ -65,6 +66,13 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
     };
     next();
   } catch (_error) {
+    recordSecurityEvent({
+      req,
+      action: "jwt_verification_failed",
+      severity: "warning",
+      targetType: "auth_token",
+      metadata: { reason: _error instanceof Error ? _error.message : "invalid_token" },
+    });
     res.status(401).json({ error: "Invalid or expired access token" });
     return;
   }
@@ -98,6 +106,13 @@ export function authenticateStreamToken(req: Request, res: Response, next: NextF
     };
     next();
   } catch (_error) {
+    recordSecurityEvent({
+      req,
+      action: "jwt_verification_failed",
+      severity: "warning",
+      targetType: "stream_token",
+      metadata: { reason: _error instanceof Error ? _error.message : "invalid_token" },
+    });
     res.status(401).json({ error: "Invalid or expired access token" });
     return;
   }
@@ -111,6 +126,18 @@ export function requireRole(...allowedRoles: string[]) {
     }
 
     if (!allowedRoles.includes(req.user.role)) {
+      recordSecurityEvent({
+        req,
+        action: "privilege_escalation_attempt",
+        severity: "security_alert",
+        actorId: req.user.id,
+        targetType: "rbac",
+        metadata: {
+          requiredRoles: allowedRoles,
+          actualRole: req.user.role,
+          userEmail: req.user.email,
+        },
+      });
       res.status(403).json({ error: "Forbidden: insufficient permissions for this role" });
       return;
     }

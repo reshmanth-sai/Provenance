@@ -4,12 +4,17 @@ import QRCode from "qrcode";
  * Returns the public verification URL for a given credential.
  */
 export function getVerifyUrl(credentialId: string, baseUrl?: string): string {
-  const host =
+  let host =
     baseUrl ||
     process.env.PUBLIC_BASE_URL ||
     process.env.FRONTEND_URL ||
     process.env.CORS_ORIGIN ||
     "http://localhost:3000";
+
+  if (host.includes(",")) {
+    host = host.split(",")[0].trim();
+  }
+
   return `${host.replace(/\/+$/, "")}/verify/${credentialId}`;
 }
 

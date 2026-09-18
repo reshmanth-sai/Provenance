@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { API_BASE } from "../lib/config";
 
 export interface User {
   id: string;
@@ -18,8 +19,6 @@ interface AuthContextType {
   refreshSession: () => Promise<string | null>;
   apiFetch: (path: string, options?: RequestInit) => Promise<Response>;
 }
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

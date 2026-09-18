@@ -10,11 +10,16 @@ import documentRoutes from "./routes/documents.js";
 import adminRoutes from "./routes/admin.js";
 import issuerRoutes from "./routes/issuer.js";
 import publicRoutes from "./routes/public.js";
+import { recordSecurityEvent } from "./services/security-logger.js";
+import { checkRasterizerAvailability } from "./services/pdf-rasterizer.js";
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 4000;
+
+// Trust first proxy (reverse proxy / load balancer like Nginx, Cloudflare, Render, AWS ALB)
+app.set("trust proxy", 1);
 
 const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
   .split(",")
@@ -35,16 +40,38 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(cookieParser());
 app.use(express.json());
 
-// Basic rate limiting on auth endpoints (100 requests per 15 minutes)
+// Production HTTP Security Headers for Express API
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  if (process.env.NODE_ENV === "production") {
+    res.setHeader("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  }
+  next();
+});
+
+// Basic rate limiting on auth endpoints (100 requests per 15 minutes) with security event notification
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   message: { error: "Too many requests from this IP, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res, _next, options) => {
+    recordSecurityEvent({
+      req,
+      action: "rate_limit_exceeded",
+      severity: "warning",
+      targetType: "auth_endpoint",
+      metadata: { limit: options.max, windowMs: options.windowMs },
+    });
+    res.status(options.statusCode).json(options.message);
+  },
 });
 
 app.use("/auth", authLimiter, authRoutes);
@@ -73,8 +100,6 @@ app.use((err: any, _req: Request, res: Response, _next: express.NextFunction) =>
   console.error("Unhandled application error:", err);
   res.status(err.status || 500).json({ error: "Internal server error" });
 });
-
-import { checkRasterizerAvailability } from "./services/pdf-rasterizer.js";
 
 app.listen(port, () => {
   console.log(`API server running on port ${port}`);

@@ -182,17 +182,26 @@ router.get("/users", async (_req: Request, res: Response): Promise<void> => {
  */
 router.get("/audit-log", async (req: Request, res: Response): Promise<void> => {
   const limit = Math.max(1, Math.min(200, parseInt(String(req.query.limit || "50"), 10) || 50));
-  const offset = Math.max(0, parseInt(String(req.query.offset || "0"), 10) || 0);
+  let offset = Math.max(0, parseInt(String(req.query.offset || "0"), 10) || 0);
+  if (req.query.page) {
+    const pageNum = Math.max(1, parseInt(String(req.query.page), 10) || 1);
+    offset = (pageNum - 1) * limit;
+  }
+  const { severity } = req.query;
 
   try {
+    const whereClause: { severity?: string } = {};
+    if (severity && typeof severity === "string") {
+      whereClause.severity = severity.toLowerCase().trim();
+    }
+
     const [total, auditLogs] = await prisma.$transaction([
-      prisma.auditLog.count(),
+      prisma.auditLog.count({ where: whereClause }),
       prisma.auditLog.findMany({
+        where: whereClause,
         orderBy: { createdAt: "desc" },
         take: limit,
         skip: offset,
-        // Without this the log shows only a raw actorId, which makes it useless
-        // for its purpose: saying who performed each governance action.
         include: {
           actor: {
             select: { id: true, email: true, role: true },
@@ -201,12 +210,17 @@ router.get("/audit-log", async (req: Request, res: Response): Promise<void> => {
       }),
     ]);
 
+    const currentPage = Math.floor(offset / limit) + 1;
+    const totalPages = Math.ceil(total / limit) || 1;
+
     res.status(200).json({
       auditLogs,
       pagination: {
         total,
         limit,
         offset,
+        page: currentPage,
+        totalPages,
       },
     });
   } catch (error) {
@@ -233,6 +247,8 @@ router.get("/stats", async (_req: Request, res: Response): Promise<void> => {
       verifiedCreds,
       rejectedCreds,
       revokedCreds,
+      securityAlertsCount,
+      securityWarningsCount,
     ] = await prisma.$transaction([
       prisma.user.count({ where: { role: "candidate" } }),
       prisma.user.count({ where: { role: "issuer_staff" } }),
@@ -245,6 +261,8 @@ router.get("/stats", async (_req: Request, res: Response): Promise<void> => {
       prisma.credential.count({ where: { status: "verified" } }),
       prisma.credential.count({ where: { status: "rejected" } }),
       prisma.credential.count({ where: { status: "revoked" } }),
+      prisma.auditLog.count({ where: { severity: "security_alert" } }),
+      prisma.auditLog.count({ where: { severity: "warning" } }),
     ]);
 
     res.status(200).json({
@@ -268,6 +286,11 @@ router.get("/stats", async (_req: Request, res: Response): Promise<void> => {
           rejected: rejectedCreds,
           revoked: revokedCreds,
           total: unverifiedCreds + pendingCreds + verifiedCreds + rejectedCreds + revokedCreds,
+        },
+        security: {
+          alerts: securityAlertsCount,
+          warnings: securityWarningsCount,
+          total: securityAlertsCount + securityWarningsCount,
         },
       },
     });

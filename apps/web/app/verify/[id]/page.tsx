@@ -19,6 +19,7 @@ import {
   Layers,
   ArrowDown,
 } from "lucide-react";
+import { API_BASE } from "../../../lib/config";
 
 interface VerificationResponse {
   credential: {
@@ -42,8 +43,6 @@ interface VerificationResponse {
     }>;
   } | null;
 }
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export default function PublicVerifyPage() {
   const params = useParams();
