@@ -12,7 +12,7 @@ import CtaPortal from "../components/landing/CtaPortal";
 
 export default function HomePage() {
   return (
-    <div className="relative bg-obsidian text-slate-100 min-h-screen selection:bg-phosphor selection:text-obsidian">
+    <div className="relative bg-slate-50 dark:bg-obsidian text-slate-900 dark:text-slate-100 min-h-screen selection:bg-phosphor selection:text-obsidian transition-colors duration-300">
       {/* Precision Reticle & Cursor Follower */}
       <CustomCursor />
 

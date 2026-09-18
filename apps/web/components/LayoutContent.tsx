@@ -12,7 +12,7 @@ export default function LayoutContent({
   const isLanding = pathname === "/";
 
   if (isLanding) {
-    return <main className="flex-1 w-full overflow-x-hidden">{children}</main>;
+    return <main className="flex-1 w-full overflow-x-clip">{children}</main>;
   }
 
   return (

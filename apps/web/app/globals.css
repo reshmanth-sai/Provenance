@@ -3,26 +3,41 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: light;
+  --bg-page: #FAFAFA;
+  --bg-surface: #F4F5F7;
+  --bg-card: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
+  --text-muted: #64748B;
+  --border-main: #E2E8F0;
+  --border-subtle: #F1F5F9;
+  --input-bg: #FFFFFF;
+  --accent-light: #EAF3F6;
+}
+
+html.dark {
   color-scheme: dark;
+  --bg-page: #08090C;
+  --bg-surface: #0C0E14;
+  --bg-card: #12151E;
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --border-main: rgba(255, 255, 255, 0.10);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --input-bg: rgba(255, 255, 255, 0.04);
+  --accent-light: rgba(30, 95, 116, 0.25);
 }
 
 html {
   scroll-behavior: smooth;
-  background-color: #08090C;
-  color: #F8FAFC;
 }
 
 body {
-  background-color: #08090C;
-  color: #F8FAFC;
-  overflow-x: hidden;
-  selection-background-color: #10B981;
-  selection-color: #08090C;
-}
-
-::selection {
-  background-color: #10B981;
-  color: #08090C;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  overflow-x: clip;
 }
 
 /* 3D Isometric & Perspective Helpers */
@@ -41,25 +56,19 @@ body {
 
 /* Hairline Grid & Architectural Lines */
 .hairline-b {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border-main);
 }
 
 .hairline-t {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border-main);
 }
 
 .hairline-l {
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid var(--border-main);
 }
 
 .hairline-r {
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Subtle Technical Noise Texture */
-.bg-noise {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
-  background-size: 24px 24px;
+  border-right: 1px solid var(--border-main);
 }
 
 /* Custom Scrollbar */
@@ -68,15 +77,200 @@ body {
   height: 6px;
 }
 
-::-webkit-scrollbar-track {
+html.dark ::-webkit-scrollbar-track {
   background: #08090C;
 }
 
-::-webkit-scrollbar-thumb {
+html.dark ::-webkit-scrollbar-thumb {
   background: #1E222D;
   border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+html.dark ::-webkit-scrollbar-thumb:hover {
   background: #334155;
+}
+
+html:not(.dark) ::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+
+/* Universal Dark Mode Semantic Overrides for Existing Pages */
+html.dark .text-gray-900 {
+  color: #F8FAFC !important;
+}
+
+html.dark .text-gray-800 {
+  color: #F1F5F9 !important;
+}
+
+html.dark .text-gray-700 {
+  color: #E2E8F0 !important;
+}
+
+html.dark .text-gray-600 {
+  color: #CBD5E1 !important;
+}
+
+html.dark .text-gray-500 {
+  color: #94A3B8 !important;
+}
+
+html.dark .text-gray-400 {
+  color: #64748B !important;
+}
+
+html.dark .bg-gray-50 {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+html.dark .bg-gray-100 {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+html.dark .bg-gray-200 {
+  background-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+html.dark .border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+html.dark .border-gray-200 {
+  border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+html.dark .border-gray-300 {
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+html.dark .hover\:bg-gray-50:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+html.dark .hover\:bg-gray-100:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Dark Mode Form Inputs & Controls */
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark select,
+html.dark textarea {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  color: #F8FAFC !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748B !important;
+}
+
+html.dark select option {
+  background-color: #12151E;
+  color: #F8FAFC;
+}
+
+/* Glass Card & Modern Dark Mode Elevation */
+.glass-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-main);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+html.dark .glass-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.01) 100%), #0D0F17;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.07), 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+html.dark .glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Translucent Glowing Status Badges in Dark Mode */
+html.dark .bg-rose-50,
+html.dark .bg-rose-100 {
+  background-color: rgba(244, 63, 94, 0.14) !important;
+  color: #FDA4AF !important;
+}
+
+html.dark .bg-amber-50,
+html.dark .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.14) !important;
+  color: #FCD34D !important;
+}
+
+html.dark .bg-emerald-50,
+html.dark .bg-emerald-100,
+html.dark .bg-green-50,
+html.dark .bg-green-100 {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+  color: #6EE7B7 !important;
+}
+
+html.dark .bg-blue-50,
+html.dark .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.14) !important;
+  color: #93C5FD !important;
+}
+
+/* Eliminate Muddy Dark-Mode Status Text (never allow dark 800/900 shades on dark) */
+html.dark .text-amber-700,
+html.dark .text-amber-800,
+html.dark .text-amber-900 {
+  color: #FCD34D !important;
+}
+
+html.dark .text-rose-700,
+html.dark .text-rose-800,
+html.dark .text-rose-900 {
+  color: #FDA4AF !important;
+}
+
+html.dark .text-emerald-700,
+html.dark .text-emerald-800,
+html.dark .text-emerald-900 {
+  color: #6EE7B7 !important;
+}
+
+html.dark .text-blue-700,
+html.dark .text-blue-800,
+html.dark .text-blue-900 {
+  color: #93C5FD !important;
+}
+
+/* Harmonized Dark-Mode Status Borders */
+html.dark .border-amber-100,
+html.dark .border-amber-200,
+html.dark .border-amber-300 {
+  border-color: rgba(245, 158, 11, 0.28) !important;
+}
+
+html.dark .border-rose-100,
+html.dark .border-rose-200,
+html.dark .border-rose-300 {
+  border-color: rgba(244, 63, 94, 0.28) !important;
+}
+
+html.dark .border-emerald-100,
+html.dark .border-emerald-200,
+html.dark .border-emerald-300 {
+  border-color: rgba(16, 185, 129, 0.28) !important;
+}
+
+html.dark .border-blue-100,
+html.dark .border-blue-200,
+html.dark .border-blue-300 {
+  border-color: rgba(59, 130, 246, 0.28) !important;
+}
+
+/* QR Code Display Protection: preserve crisp light contrast for phone scanners */
+.qr-container {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
 }

@@ -32,17 +32,17 @@ const METRICS = [
 
 export default function TelemetryGrid() {
   return (
-    <section id="architecture" className="py-24 px-4 sm:px-6 lg:px-8 border-b border-white/10 bg-obsidian-surface/40">
+    <section id="architecture" className="py-24 px-4 sm:px-6 lg:px-8 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-obsidian-surface/40 transition-colors duration-300">
       <div className="max-w-7xl mx-auto space-y-16">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 hairline-b pb-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 dark:border-white/10 pb-8">
           <div className="space-y-3 max-w-2xl">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-phosphor font-semibold">
+            <span className="text-[11px] font-mono uppercase tracking-widest text-emerald-600 dark:text-phosphor font-semibold">
               TELEMETRY & CRYPTOGRAPHIC ASSURANCE
             </span>
-            <h2 className="text-3xl sm:text-5xl font-display font-extrabold text-white tracking-tight">
+            <h2 className="text-3xl sm:text-5xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight">
               Engineered for Absolute Trust.
             </h2>
-            <p className="text-sm sm:text-base text-slate-400">
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
               Not a vague promise. Provenance replaces reputational assumptions with mathematical guarantees.
             </p>
           </div>
@@ -52,21 +52,21 @@ export default function TelemetryGrid() {
         </div>
 
         {/* 4 Brutalist Metric Cells */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-white/10 border border-white/10 rounded-2xl bg-obsidian-card/60 backdrop-blur-xl overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-white/10 border border-slate-200 dark:border-white/10 rounded-2xl bg-white dark:bg-obsidian-card/60 shadow-xl shadow-slate-900/5 dark:shadow-2xl backdrop-blur-xl overflow-hidden">
           {METRICS.map((metric, i) => {
             const Icon = metric.icon;
             return (
-              <div key={i} className="p-8 space-y-4 hover:bg-white/[0.02] transition-colors">
+              <div key={i} className="p-8 space-y-4 hover:bg-slate-50/80 dark:hover:bg-white/[0.02] transition-colors">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-mono text-slate-500">0{i + 1} // PROTOCOL</span>
-                  <Icon className="w-4 h-4 text-phosphor" />
+                  <Icon className="w-4 h-4 text-emerald-600 dark:text-phosphor" />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-4xl sm:text-5xl font-display font-extrabold text-white tracking-tight">
+                  <p className="text-4xl sm:text-5xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight">
                     {metric.num}
                   </p>
-                  <p className="text-sm font-mono font-semibold text-slate-200">{metric.label}</p>
-                  <p className="text-xs text-slate-400 leading-relaxed">{metric.subtext}</p>
+                  <p className="text-sm font-mono font-semibold text-slate-800 dark:text-slate-200">{metric.label}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{metric.subtext}</p>
                 </div>
               </div>
             );

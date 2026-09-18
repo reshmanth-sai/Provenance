@@ -7,6 +7,8 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "npm run dev --workspace=@provenance/web",
+    "dev:all": "npm run dev:api & npm run dev:web",
     "dev:api": "npm run dev --workspace=@provenance/api",
     "dev:web": "npm run dev --workspace=@provenance/web",
     "db:migrate": "npm run db:backup && npm --workspace=@provenance/db run migrate --",

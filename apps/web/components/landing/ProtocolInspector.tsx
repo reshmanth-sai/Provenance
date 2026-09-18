@@ -94,18 +94,18 @@ export default function ProtocolInspector() {
   };
 
   return (
-    <section id="protocol-lab" className="py-24 px-4 sm:px-6 lg:px-8 border-b border-white/10 bg-obsidian">
+    <section id="protocol-lab" className="py-24 px-4 sm:px-6 lg:px-8 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-obsidian transition-colors duration-300">
       <div className="max-w-7xl mx-auto space-y-12">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 hairline-b pb-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 dark:border-white/10 pb-8">
           <div className="space-y-3 max-w-2xl">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-slate-400 font-semibold flex items-center gap-2">
-              <Terminal className="w-3.5 h-3.5 text-phosphor" />
+            <span className="text-[11px] font-mono uppercase tracking-widest text-slate-600 dark:text-slate-400 font-semibold flex items-center gap-2">
+              <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-phosphor" />
               <span>TRANSPARENT OPEN SPECIFICATION</span>
             </span>
-            <h2 className="text-3xl sm:text-5xl font-display font-extrabold text-white tracking-tight">
+            <h2 className="text-3xl sm:text-5xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight">
               Protocol Specification Lab.
             </h2>
-            <p className="text-sm sm:text-base text-slate-400">
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
               No proprietary vendor lock-in. Every cryptographic claim, Merkle inclusion proof, 
               and append-only block header can be validated independently with standard RFC algorithms.
             </p>
@@ -117,9 +117,9 @@ export default function ProtocolInspector() {
         </div>
 
         {/* Terminal Window */}
-        <div className="rounded-2xl bg-obsidian-card border border-white/10 overflow-hidden shadow-2xl backdrop-blur-xl">
+        <div className="rounded-2xl bg-white dark:bg-obsidian-card border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl shadow-slate-900/5 dark:shadow-2xl backdrop-blur-xl">
           {/* Tab Navigation */}
-          <div className="px-4 pt-3 bg-obsidian-elevated/80 border-b border-white/10 flex flex-wrap items-center justify-between gap-4">
+          <div className="px-4 pt-3 bg-slate-100 dark:bg-obsidian-elevated/80 border-b border-slate-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-1.5 overflow-x-auto pb-2 sm:pb-0">
               {SPEC_TABS.map((tab, idx) => {
                 const Icon = tab.icon;
@@ -131,8 +131,8 @@ export default function ProtocolInspector() {
                     data-cursor="INSPECT"
                     className={`px-3.5 py-2 rounded-lg text-xs font-mono flex items-center gap-2 transition-colors ${
                       isActive
-                        ? "bg-white/10 text-white font-semibold border border-white/15"
-                        : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
+                        ? "bg-white dark:bg-white/10 text-slate-900 dark:text-white font-semibold border border-slate-200 dark:border-white/15 shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-white/[0.04]"
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -145,12 +145,12 @@ export default function ProtocolInspector() {
             <button
               onClick={handleCopy}
               data-cursor="COPY"
-              className="mb-2 sm:mb-0 px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/10 text-slate-300 text-xs font-mono flex items-center gap-1.5 transition-colors border border-white/10"
+              className="mb-2 sm:mb-0 px-3 py-1.5 rounded-lg bg-white dark:bg-white/[0.05] hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 text-xs font-mono flex items-center gap-1.5 transition-colors border border-slate-200 dark:border-white/10 shadow-xs"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-phosphor" />
-                  <span className="text-phosphor">Copied Payload</span>
+                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-phosphor" />
+                  <span className="text-emerald-600 dark:text-phosphor font-medium">Copied Payload</span>
                 </>
               ) : (
                 <>
@@ -162,7 +162,7 @@ export default function ProtocolInspector() {
           </div>
 
           {/* Code Viewer */}
-          <div className="p-6 bg-obsidian-surface/90 overflow-x-auto">
+          <div className="p-6 bg-slate-950 dark:bg-obsidian-surface/90 overflow-x-auto">
             <pre className="font-mono text-xs text-emerald-400/90 leading-relaxed selection:bg-phosphor selection:text-obsidian">
               <code>{SPEC_TABS[activeTab].content}</code>
             </pre>
