@@ -2,14 +2,16 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
-import { ShieldCheck, Search, LogOut, User as UserIcon, FileText, PlusCircle, LayoutDashboard } from "lucide-react";
+import { Shield, Search, LogOut, User as UserIcon, PlusCircle, LayoutDashboard, Terminal } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [searchId, setSearchId] = useState("");
+  const isLanding = pathname === "/";
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,66 +22,84 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-surface-card/95 backdrop-blur-sm border-b border-gray-200">
+    <header className="sticky top-0 z-50 bg-obsidian/85 backdrop-blur-xl border-b border-white/10 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Brand Logo */}
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2 text-accent font-bold text-xl tracking-tight">
-            <ShieldCheck className="w-6 h-6 text-accent" />
-            <span>Provenance</span>
+        {/* Brand Logo & Telemetry Indicator */}
+        <div className="flex items-center gap-4 sm:gap-6">
+          <Link href="/" className="flex items-center gap-2 text-white font-bold text-lg tracking-tight group">
+            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/15 flex items-center justify-center group-hover:border-phosphor/50 transition-colors">
+              <Shield className="w-4 h-4 text-phosphor" />
+            </div>
+            <span className="font-display tracking-tight text-white font-semibold">Provenance</span>
           </Link>
 
-          {/* Role Badges for logged in users */}
+          {/* Cryptographic Node Status Pill */}
+          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/10 text-[11px] font-mono text-slate-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-phosphor animate-pulse" />
+            <span>MAINNET // SHA-256</span>
+          </div>
+
+          {/* Role Badges for logged-in users */}
           {user && (
-            <span className="hidden md:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent-light text-accent capitalize">
+            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-phosphor/10 text-phosphor border border-phosphor/20 capitalize">
               {user.role.replace("_", " ")}
             </span>
           )}
         </div>
 
         {/* Global Quick Verifier Search */}
-        <form onSubmit={handleSearch} className="hidden sm:flex items-center relative flex-1 max-w-xs">
-          <label htmlFor="globalSearchId" className="sr-only">Verify credential ID</label>
+        <form onSubmit={handleSearch} className="hidden md:flex items-center relative flex-1 max-w-xs">
+          <label htmlFor="globalSearchId" className="sr-only">Verify credential hash or ID</label>
           <input
             id="globalSearchId"
             name="globalSearchId"
             type="text"
             autoComplete="off"
-            aria-label="Verify credential ID"
-            placeholder="Verify credential ID..."
+            aria-label="Verify credential hash or ID"
+            placeholder="Search credential hash / ID..."
             value={searchId}
             onChange={(e) => setSearchId(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-surface border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+            className="w-full pl-9 pr-3 py-1.5 text-xs font-mono bg-white/[0.04] text-slate-200 placeholder-slate-500 border border-white/10 rounded-lg focus:outline-none focus:border-phosphor focus:ring-1 focus:ring-phosphor transition-all"
           />
-          <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 pointer-events-none" />
         </form>
 
-        {/* Navigation Links */}
-        <nav className="flex items-center gap-2 sm:gap-4 text-sm font-medium">
+        {/* Landing Page Quick Nav Anchor Links */}
+        {isLanding && !user && (
+          <div className="hidden xl:flex items-center gap-6 text-xs font-mono uppercase tracking-wider text-slate-400">
+            <a href="#architecture" className="hover:text-white transition-colors">Architecture</a>
+            <a href="#deconstruction" className="hover:text-white transition-colors">3D Deconstruction</a>
+            <a href="#tamper-engine" className="hover:text-white transition-colors">Tamper Test</a>
+            <a href="#protocol-lab" className="hover:text-white transition-colors">Protocol Lab</a>
+          </div>
+        )}
+
+        {/* Navigation Links & Action Gateway */}
+        <nav className="flex items-center gap-2 sm:gap-3 text-xs font-medium">
           {user ? (
             <>
               {user.role === "candidate" && (
                 <>
                   <Link
                     href="/dashboard"
-                    className="flex items-center gap-1.5 px-3 py-2 text-gray-700 hover:text-accent rounded-md transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                   >
-                    <LayoutDashboard className="w-4 h-4" />
-                    <span className="hidden md:inline">Dashboard</span>
+                    <LayoutDashboard className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="hidden sm:inline">Dashboard</span>
                   </Link>
                   <Link
                     href="/dashboard/upload"
-                    className="flex items-center gap-1.5 px-3 py-2 text-gray-700 hover:text-accent rounded-md transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                   >
-                    <PlusCircle className="w-4 h-4" />
-                    <span className="hidden md:inline">Upload</span>
+                    <PlusCircle className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="hidden sm:inline">Upload</span>
                   </Link>
                   <Link
                     href="/dashboard/profile"
-                    className="flex items-center gap-1.5 px-3 py-2 text-gray-700 hover:text-accent rounded-md transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                   >
-                    <UserIcon className="w-4 h-4" />
-                    <span className="hidden md:inline">Profile</span>
+                    <UserIcon className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="hidden sm:inline">Profile</span>
                   </Link>
                 </>
               )}
@@ -89,27 +109,27 @@ export default function Navbar() {
                 <>
                   <Link
                     href="/issuer/queue"
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                    className="px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                   >
-                    <span>Queue</span>
+                    Queue
                   </Link>
                   <Link
                     href="/issuer/issue"
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                    className="px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                   >
-                    <span>Issue</span>
+                    Issue
                   </Link>
                   <Link
                     href="/issuer/credentials"
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                    className="px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                   >
-                    <span>Roster</span>
+                    Roster
                   </Link>
                   <Link
                     href="/issuer/chain"
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                    className="px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                   >
-                    <span>Chain</span>
+                    Chain
                   </Link>
                 </>
               )}
@@ -119,52 +139,52 @@ export default function Navbar() {
                 <>
                   <Link
                     href="/admin"
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                    className="px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                   >
-                    <span>Overview</span>
+                    Overview
                   </Link>
                   <Link
                     href="/admin/institutions"
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                    className="px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                   >
-                    <span>Institutions</span>
+                    Institutions
                   </Link>
                   <Link
                     href="/admin/users"
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                    className="px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                   >
-                    <span>Users</span>
+                    Users
                   </Link>
                   <Link
                     href="/admin/audit-log"
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-700 hover:text-accent rounded-md text-xs font-semibold transition-colors"
+                    className="px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                   >
-                    <span>Audit Log</span>
+                    Audit Log
                   </Link>
                 </>
               )}
 
               <button
                 onClick={() => logout().then(() => router.push("/"))}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-md text-xs font-medium transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span>Logout</span>
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </>
           ) : (
             <>
               <Link
                 href="/login"
-                className="px-3 py-1.5 text-gray-700 hover:text-accent font-medium rounded-md transition-colors"
+                className="px-3.5 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg font-mono transition-colors"
               >
-                Log In
+                Sign In
               </Link>
               <Link
                 href="/register"
-                className="px-4 py-1.5 bg-accent hover:bg-accent-hover text-white font-medium rounded-lg shadow-sm transition-colors text-xs"
+                className="px-4 py-1.5 bg-white text-obsidian hover:bg-slate-200 font-semibold rounded-lg shadow-sm font-mono tracking-tight transition-all"
               >
-                Sign Up
+                Register
               </Link>
             </>
           )}

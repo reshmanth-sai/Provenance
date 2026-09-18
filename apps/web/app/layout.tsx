@@ -1,45 +1,59 @@
 import type { Metadata, Viewport } from "next";
+import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import LayoutContent from "../components/LayoutContent";
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#1E5F74",
+  themeColor: "#08090C",
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://provenance.example.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://provenance-web-two.vercel.app"),
   title: {
-    default: "Provenance | Cryptographic Credential Verification",
+    default: "Provenance | Cryptographic Credential Protocol",
     template: "%s | Provenance",
   },
   description:
-    "Tamper-evident, cryptographically verifiable institutional credentials and candidate profiles with per-issuer append-only hash chains.",
+    "Mathematical certainty for institutional credentials. Tamper-evident, per-issuer append-only hash chains and zero-leakage verification.",
   keywords: [
     "credential verification",
     "tamper-evident",
     "cryptographic proofs",
     "hash chain",
-    "academic records",
-    "degree verification",
+    "merkle tree",
+    "academic ledger",
   ],
   authors: [{ name: "Provenance Trust Network" }],
   openGraph: {
     type: "website",
     locale: "en_US",
     siteName: "Provenance",
-    title: "Provenance | Cryptographic Credential Verification",
+    title: "Provenance | Cryptographic Credential Protocol",
     description:
-      "Tamper-evident, cryptographically verifiable institutional credentials and candidate profiles.",
+      "Mathematical certainty for institutional credentials. Tamper-evident, per-issuer append-only hash chains.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Provenance | Cryptographic Credential Verification",
+    title: "Provenance | Cryptographic Credential Protocol",
     description:
-      "Tamper-evident, cryptographically verifiable institutional credentials and candidate profiles.",
+      "Mathematical certainty for institutional credentials. Tamper-evident, per-issuer append-only hash chains.",
   },
   robots: {
     index: true,
@@ -53,13 +67,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="bg-surface text-primary antialiased min-h-screen flex flex-col font-sans">
+    <html lang="en" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
+      <body className="bg-obsidian text-slate-100 antialiased min-h-screen flex flex-col font-sans selection:bg-phosphor selection:text-obsidian">
         <AuthProvider>
           <Navbar />
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {children}
-          </main>
+          <LayoutContent>{children}</LayoutContent>
           <Footer />
         </AuthProvider>
       </body>
