@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: provenance-api
+    runtime: docker
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: CORS_ORIGIN
+        value: https://provenance-web-two.vercel.app
+      - key: FRONTEND_URL
+        value: https://provenance-web-two.vercel.app
+      - key: PUBLIC_BASE_URL
+        value: https://provenance-web-two.vercel.app
+      - key: COOKIE_SAME_SITE
+        value: none
+      - key: ISSUER_LOOKUP_ENABLED
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
