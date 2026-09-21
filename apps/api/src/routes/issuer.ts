@@ -147,6 +147,8 @@ router.get(
         return;
       }
 
+      res.removeHeader("X-Frame-Options");
+      res.setHeader("Content-Security-Policy", "frame-ancestors 'self' http://localhost:3000 http://localhost:4000");
       res.setHeader("Content-Type", doc.originalMimeType || "application/pdf");
       res.setHeader("Content-Disposition", `inline; filename="${doc.storageKey}"`);
 
