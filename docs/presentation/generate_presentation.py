@@ -591,7 +591,7 @@ All results are stored in the DocumentAnalysis database table.""")
 
     add_card(slide6, img_left, img_top, img_w, img_h, bg_color=COLOR_WHITE, border_color=COLOR_BORDER)
     
-    cand_img_path = os.path.join(WORKSPACE_ROOT, "candidate_upload_success.png")
+    cand_img_path = os.path.join(WORKSPACE_ROOT, "docs", "screenshots", "candidate_upload_success.png")
     if os.path.exists(cand_img_path):
         slide6.shapes.add_picture(cand_img_path, img_left + Inches(0.12), img_top + Inches(0.12), img_w - Inches(0.24), img_h - Inches(0.24))
 
@@ -755,7 +755,7 @@ In apps/api/src/services/hash-chain.ts:
 
     add_card(slide8, img_left, img_top8, img_w8, img_h8, bg_color=COLOR_WHITE, border_color=COLOR_BORDER)
     
-    issuer_img_path = os.path.join(WORKSPACE_ROOT, "issuer_review_approved.png")
+    issuer_img_path = os.path.join(WORKSPACE_ROOT, "docs", "screenshots", "issuer_review_approved.png")
     if os.path.exists(issuer_img_path):
         slide8.shapes.add_picture(issuer_img_path, img_left + Inches(0.12), img_top8 + Inches(0.12), img_w8 - Inches(0.24), img_h8 - Inches(0.24))
 
@@ -1376,7 +1376,7 @@ With our clean monorepo architecture, getting started takes only three simple st
 Thank you for your time. We welcome your questions and invite you to explore the Provenance repository!""")
 
     # Save presentation
-    output_path = os.path.join(WORKSPACE_ROOT, "Provenance_Presentation.pptx")
+    output_path = os.path.join(WORKSPACE_ROOT, "docs", "presentation", "Provenance_Presentation.pptx")
     prs.save(output_path)
     print(f"Presentation successfully saved to: {output_path}")
 

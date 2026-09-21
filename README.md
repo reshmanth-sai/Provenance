@@ -1,8 +1,25 @@
 # Provenance
 
-Provenance is a tamper-evident credential-verification platform featuring candidate, issuer, recruiter, and admin roles with self-upload document analysis and per-issuer tamper-evident hash chains.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Frontend-Next.js%2014-black?logo=next.js)](https://provenance-web-two.vercel.app)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Backend](https://img.shields.io/badge/API-Express%20%7C%20Node.js-green?logo=node.js)](apps/api)
+[![Database](https://img.shields.io/badge/Database-PostgreSQL%20%7C%20Prisma-indigo?logo=postgresql)](packages/db)
+[![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-success?logo=vercel)](https://provenance-web-two.vercel.app)
+
+> **Live Production Demo**: [https://provenance-web-two.vercel.app](https://provenance-web-two.vercel.app)
+
+Provenance is a tamper-evident, cryptographic credential verification platform featuring candidate, institutional issuer, recruiter, and administrator roles with automated multi-engine document forensics and per-issuer cryptographic hash chains.
 
 ---
+
+## Platform Preview
+
+| Candidate Document Analysis | Institutional Review & Approval |
+| :---: | :---: |
+| ![Candidate Upload Experience](docs/screenshots/candidate_upload_success.png) | ![Issuer Review Portal](docs/screenshots/issuer_review_approved.png) |
+| *Automated OCR, visual forensics, and one-click institutional attestation* | *Registrar review queue with verified SIS validation and ledger signing* |
+
 
 ## Prerequisites
 
@@ -89,16 +106,19 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```
 provenance/
   ├── apps/
-  │   ├── api/            # Express + TypeScript backend
-  │   └── web/            # Next.js App Router + Tailwind frontend
+  │   ├── api/            # Express + TypeScript backend (forensic pipeline & hash chains)
+  │   └── web/            # Next.js App Router + Tailwind frontend (candidate, issuer, admin portals)
   ├── packages/
-  │   └── db/             # Prisma schema, migrations, and database client
-  ├── storage/
-  │   └── uploads/        # Local file upload directory (gitignored)
-  ├── docker-compose.yml  # PostgreSQL 16 service definition
+  │   └── db/             # Prisma schema, migrations, seeders, and client
+  ├── docs/
+  │   ├── presentation/   # Architecture deck (.pptx and HTML slide system)
+  │   └── screenshots/    # Application UI captures and workflow diagrams
+  ├── test-fixtures/      # Sample certificates & test documents for OCR / forensic validation
+  ├── scripts/            # Database backups, migration helpers, and maintenance scripts
+  ├── docker-compose.yml  # Local PostgreSQL 16 service definition
   ├── .env.example        # Environment variables template
-  ├── .gitignore          # Git ignore rules
-  └── README.md           # Project documentation
+  ├── .gitignore          # Clean Git ignore rules
+  └── README.md           # Engineering documentation
 ```
 
 ---

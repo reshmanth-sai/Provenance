@@ -1,4 +1,4 @@
-import { prisma } from "./index.js";
+import { prisma } from "../../packages/db/src/index.js";
 
 async function main() {
   console.log("Running database backfill to recalibrate signal severities...\n");
